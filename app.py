@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # 1. Configuración
-st.set_page_config(page_title="Serge Financial Strategy v3.29", layout="wide")
+st.set_page_config(page_title="Serge Financial Strategy v3.31", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera")
 
 # 2. Sidebar
@@ -24,7 +24,7 @@ with st.sidebar:
     retiro_buffer_hoy = st.number_input("Gasto 2 años (valor hoy $)", value=60000, step=5000)
     inflacion_gastos = st.number_input("Inflación de Gastos (%)", value=3.0, step=0.5) / 100
     
-    años_proyeccion = st.slider("Horizonte (Años)", 4, 60, 40)
+    años_proyeccion = st.slider("Horizonte (Años)", 4, 60, 48)
 
     st.header("🛡️ Plan de Contingencia")
     st.info("¿Cuánto más podrías trabajar e invertir post-compra para estabilizar el plan?")
@@ -62,7 +62,6 @@ for mes in range(1, meses + 1):
         precio_aparta *= (1 + (inflacion_inmueble / 12))
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
 
-    # Hito de Compra
     if not meta_lograda and capital_actual >= (precio_aparta + liquidez_deseada):
         meta_lograda = True
         año_meta = año_actual
@@ -73,26 +72,26 @@ for mes in range(1, meses + 1):
         capital_post_meta = capital_actual
         retiro_anual += gasto_total_inicial
     
-    # Lógica de Aportes vs Retiros (Post-Compra)
     if not meta_lograda:
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
     else:
         meses_desde_compra = mes - mes_de_la_compra
-        es_periodo_extra = inversion_extra_mensual > 0 and meses_desde_compra <= (años_extra_trabajo * 12)
+        # PARCHE DE PRECISIÓN: Solo hay periodo extra si años_extra > 0 E inversión > 0
+        es_periodo_extra = años_extra_trabajo > 0 and inversion_extra_mensual > 0 and meses_desde_compra <= (años_extra_trabajo * 12)
         
         if es_periodo_extra:
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
         else:
-            periodo_gracia = (años_extra_trabajo * 12) if inversion_extra_mensual > 0 else 0
+            # Si el slider es 0, el retiro empieza el mes inmediatamente siguiente a la compra
+            periodo_gracia = (años_extra_trabajo * 12) if (años_extra_trabajo > 0 and inversion_extra_mensual > 0) else 0
             meses_post_trabajo = meses_desde_compra - periodo_gracia
             
             if meses_post_trabajo > 0 and meses_post_trabajo % 24 == 0:
                 capital_actual -= gasto_buffer_ajustado
                 retiro_anual += gasto_buffer_ajustado
     
-    # Interés Compuesto
     rendimiento_mes = capital_actual * (rendimiento_anual / 12)
     capital_actual += rendimiento_mes
     interes_anual += rendimiento_mes
@@ -100,9 +99,8 @@ for mes in range(1, meses + 1):
     if capital_actual <= 0 and año_agotamiento is None:
         año_agotamiento = año_actual
 
-    # Registro Anual
     if mes % 12 == 0:
-        periodo_gracia = (años_extra_trabajo * 12) if inversion_extra_mensual > 0 else 0
+        periodo_gracia = (años_extra_trabajo * 12) if (años_extra_trabajo > 0 and inversion_extra_mensual > 0) else 0
         es_retiro = meta_lograda and (mes - mes_de_la_compra > periodo_gracia)
         datos.append({
             "Año": año_actual,
@@ -135,7 +133,7 @@ with col_chart:
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. KPIs y Banners de Alerta
+# 5. KPIs y Banners
 st.markdown("---")
 k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({2026 + años_proyeccion})", f"${df['Capital ($)'].iloc[-1]:,}")
@@ -145,14 +143,22 @@ with k3:
     else: st.error("🎯 Meta No Alcanzada")
 
 if meta_lograda:
+    # Lógica de Año de Libertad ajustada para evitar el "Año 0" fantasma
+    usa_plan = años_extra_trabajo > 0 and inversion_extra_mensual > 0
+    año_libertad = año_meta + (años_extra_trabajo if usa_plan else 0)
+    
     if año_agotamiento:
-        # BANNER AMARILLO ACTUALIZADO
         st.warning(f"⚠️\n\n**Alerta de Sistema:** El capital se agota en el año **{año_agotamiento}**. Ajusta rendimiento, gastos o aplica el plan de contingencia.")
     else:
-        # BANNER AZUL
-        st.info(f"🚀\n\n**Libertad Financiera Lograda:** Apartamento comprado y retiro iniciado en el año **{año_meta}**. El capital es suficiente para cubrir los {años_proyeccion} años proyectados de forma sostenible.")
+        # Texto dinámico basado en si se usó el plan de contingencia o no
+        inicio_texto = f"Apartamento comprado en {año_meta}"
+        if usa_plan:
+            inicio_texto += f" y retiro iniciado en el año **{año_libertad}**"
+        else:
+            inicio_texto += " y retiro iniciado inmediatamente"
+            
+        st.info(f"🚀\n\n**Libertad Financiera Lograda:** {inicio_texto}. El capital es suficiente para cubrir los {años_proyeccion} años proyectados de forma sostenible.")
 
-    # Datos técnicos de soporte
     st.markdown("---")
     m1, m2 = st.columns(2)
     m1.write(f"🏠 **Costo Real Compra:** `${costo_final_aparta:,.0f}`")
