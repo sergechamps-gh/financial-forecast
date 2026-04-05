@@ -161,5 +161,5 @@ if meta_lograda:
 
     st.markdown("---")
     m1, m2 = st.columns(2)
-    m1.write(f"🏠 **Costo Real Compra:** `${costo_final_aparta:,.0f}`")
+    m1.write(f"🏠 **Precio final apartamento:** `${costo_final_aparta:,.0f}`")
     m2.write(f"💰 **Capital Post-Compra:** `${capital_post_meta:,.0f}`")
