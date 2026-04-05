@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # 1. Configuración
-st.set_page_config(page_title="Serge Financial Strategy v3.23", layout="wide")
+st.set_page_config(page_title="Serge Financial Strategy v3.29", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera")
 
 # 2. Sidebar
@@ -20,11 +20,16 @@ with st.sidebar:
     st.header("🎯 Meta de Retiro")
     liquidez_deseada = st.number_input("Liquidez Extra Inicial ($)", value=500000, step=10000)
     
-    st.header("💸 Fase de Desembolso (Inflada)")
+    st.header("💸 Fase de Desembolso")
     retiro_buffer_hoy = st.number_input("Gasto 2 años (valor hoy $)", value=60000, step=5000)
     inflacion_gastos = st.number_input("Inflación de Gastos (%)", value=3.0, step=0.5) / 100
     
     años_proyeccion = st.slider("Horizonte (Años)", 4, 60, 40)
+
+    st.header("🛡️ Plan de Contingencia")
+    st.info("¿Cuánto más podrías trabajar e invertir post-compra para estabilizar el plan?")
+    años_extra_trabajo = st.slider("Años extra de trabajo post-compra", 0, 10, 0)
+    inversion_extra_mensual = st.number_input("Inversión mensual extra ($)", value=0, step=100)
 
 # 3. Motor de Cálculo
 meses = años_proyeccion * 12
@@ -45,12 +50,9 @@ retiro_anual = 0
 
 # Fila Génesis (Año 2026)
 datos.append({
-    "Año": 2026,
-    "Capital ($)": round(cap_inicial),
-    "Precio Apt": f"{round(precio_hoy):,}",
-    "Inyectado ($)": 0, "Intereses ($)": 0, "Retiro ($)": 0,
-    "Gasto_Invisible_2Y": round(retiro_buffer_hoy),
-    "Status": "Inicio 🚀"
+    "Año": 2026, "Capital ($)": round(cap_inicial), "Precio Apt": f"{round(precio_hoy):,}",
+    "Inyectado ($)": 0, "Intereses ($)": 0, "Retiro ($)": 0, 
+    "Gasto_2Y": round(retiro_buffer_hoy), "Status": "Inicio 🚀"
 })
 
 for mes in range(1, meses + 1):
@@ -60,25 +62,37 @@ for mes in range(1, meses + 1):
         precio_aparta *= (1 + (inflacion_inmueble / 12))
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
 
+    # Hito de Compra
     if not meta_lograda and capital_actual >= (precio_aparta + liquidez_deseada):
         meta_lograda = True
         año_meta = año_actual
         mes_de_la_compra = mes
-        costo_final_aparta = precio_aparta # Guardamos el dato para el resumen
+        costo_final_aparta = precio_aparta
         gasto_total_inicial = precio_aparta + gasto_buffer_ajustado
         capital_actual -= gasto_total_inicial
-        capital_post_meta = capital_actual # Guardamos el remanente
+        capital_post_meta = capital_actual
         retiro_anual += gasto_total_inicial
     
+    # Lógica de Aportes vs Retiros (Post-Compra)
     if not meta_lograda:
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
     else:
         meses_desde_compra = mes - mes_de_la_compra
-        if meses_desde_compra > 0 and meses_desde_compra % 24 == 0:
-            capital_actual -= gasto_buffer_ajustado
-            retiro_anual += gasto_buffer_ajustado
+        es_periodo_extra = inversion_extra_mensual > 0 and meses_desde_compra <= (años_extra_trabajo * 12)
+        
+        if es_periodo_extra:
+            capital_actual += inversion_extra_mensual
+            inyectado_anual += inversion_extra_mensual
+        else:
+            periodo_gracia = (años_extra_trabajo * 12) if inversion_extra_mensual > 0 else 0
+            meses_post_trabajo = meses_desde_compra - periodo_gracia
+            
+            if meses_post_trabajo > 0 and meses_post_trabajo % 24 == 0:
+                capital_actual -= gasto_buffer_ajustado
+                retiro_anual += gasto_buffer_ajustado
     
+    # Interés Compuesto
     rendimiento_mes = capital_actual * (rendimiento_anual / 12)
     capital_actual += rendimiento_mes
     interes_anual += rendimiento_mes
@@ -86,7 +100,10 @@ for mes in range(1, meses + 1):
     if capital_actual <= 0 and año_agotamiento is None:
         año_agotamiento = año_actual
 
+    # Registro Anual
     if mes % 12 == 0:
+        periodo_gracia = (años_extra_trabajo * 12) if inversion_extra_mensual > 0 else 0
+        es_retiro = meta_lograda and (mes - mes_de_la_compra > periodo_gracia)
         datos.append({
             "Año": año_actual,
             "Capital ($)": round(capital_actual) if capital_actual > 0 else 0,
@@ -94,8 +111,8 @@ for mes in range(1, meses + 1):
             "Inyectado ($)": round(inyectado_anual),
             "Intereses ($)": round(interes_anual),
             "Retiro ($)": round(retiro_anual),
-            "Gasto_Invisible_2Y": round(gasto_buffer_ajustado),
-            "Status": "Retiro 🌴" if meta_lograda else "Activo 💼"
+            "Gasto_2Y": round(gasto_buffer_ajustado),
+            "Status": "Retiro 🌴" if es_retiro else "Activo 💼"
         })
         inyectado_anual = 0; interes_anual = 0; retiro_anual = 0
 
@@ -105,7 +122,7 @@ df = pd.DataFrame(datos)
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"📑 Proyección a {años_proyeccion} Años")
-    st.dataframe(df.drop(columns=['Gasto_Invisible_2Y']).style.format({
+    st.dataframe(df.drop(columns=['Gasto_2Y']).style.format({
         "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
         "Inyectado ($)": "{:,.0f}", "Intereses ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"
     }), height=400, use_container_width=True)
@@ -114,29 +131,29 @@ with col_chart:
     st.subheader("📈 Capital vs Gasto")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='royalblue', width=3)))
-    fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_Invisible_2Y'], name="Gasto (2Y)", line=dict(color='orange', dash='dot')))
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_2Y'], name="Gasto (2Y)", line=dict(color='orange', dash='dot')))
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. KPIs y Resumen
+# 5. KPIs y Banners de Alerta
 st.markdown("---")
 k1, k2, k3 = st.columns(3)
-with k1: 
-    st.metric(f"Capital Final ({2026 + años_proyeccion})", f"${df['Capital ($)'].iloc[-1]:,}")
-with k2: 
-    st.metric("Buffer 2 Años (Valor Hoy)", f"${retiro_buffer_hoy:,}")
+with k1: st.metric(f"Capital Final ({2026 + años_proyeccion})", f"${df['Capital ($)'].iloc[-1]:,}")
+with k2: st.metric("Buffer 2 Años (Hoy)", f"${retiro_buffer_hoy:,}")
 with k3: 
-    if meta_lograda: st.success(f"🎯 Meta en {año_meta}")
+    if meta_lograda: st.success(f"🎯 Compra en {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
-# --- SECCIÓN DE ALERTAS CORREGIDA ---
 if meta_lograda:
     if año_agotamiento:
-        st.warning(f"⚠️ **Alerta de Sistema:** El capital se agota en el año **{año_agotamiento}**. Ajusta rendimiento o gastos.")
+        # BANNER AMARILLO ACTUALIZADO
+        st.warning(f"⚠️\n\n**Alerta de Sistema:** El capital se agota en el año **{año_agotamiento}**. Ajusta rendimiento, gastos o aplica el plan de contingencia.")
     else:
-        st.info(f"🚀 **Libertad Financiera Lograda:** Apartamento comprado y retiro iniciado en el año **{año_meta}**. El capital es suficiente para cubrir los {años_proyeccion} años proyectados de forma sostenible.")
-    
-    # NUEVO BLOQUE: Resumen Hitos (Friendly para Mobile)
+        # BANNER AZUL
+        st.info(f"🚀\n\n**Libertad Financiera Lograda:** Apartamento comprado y retiro iniciado en el año **{año_meta}**. El capital es suficiente para cubrir los {años_proyeccion} años proyectados de forma sostenible.")
+
+    # Datos técnicos de soporte
+    st.markdown("---")
     m1, m2 = st.columns(2)
-    m1.markdown(f"🏠 **Costo del Apartamento ({año_meta}):** `${costo_final_aparta:,.0f}`")
-    m2.markdown(f"💰 **Capital Post-Compra:** `${capital_post_meta:,.0f}`")
+    m1.write(f"🏠 **Costo Real Compra:** `${costo_final_aparta:,.0f}`")
+    m2.write(f"💰 **Capital Post-Compra:** `${capital_post_meta:,.0f}`")
