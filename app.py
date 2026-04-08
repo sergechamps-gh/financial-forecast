@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from datetime import datetime  # <--- Nueva librería
+from datetime import datetime
 
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
@@ -17,24 +17,24 @@ with st.sidebar:
     st.header("⚙️ Variables")
     cap_inicial = st.number_input("Capital Inicial ($)", value=135000, step=5000)
     ahorro_mensual = st.number_input("Aporte Mensual ($)", value=2000, step=100)
-    rendimiento_anual = st.number_input("Rendimiento Mercado (%)", value=10.0, step=0.5) / 100
+    rendimiento_anual = st.number_input("Rendimiento del Mercado (%)", value=10.0, step=0.5) / 100
     
     st.header("🏠 Inmueble")
-    precio_hoy = st.number_input(f"Precio Aparta (en {YEAR_ACTUAL}) ($)", value=200000, step=5000)
+    precio_hoy = st.number_input(f"Precio del aparta (en {YEAR_ACTUAL}) ($)", value=200000, step=5000)
     inflacion_inmueble = st.number_input("Inflación Inmueble (%)", value=4.0, step=0.5) / 100
     
     st.header("🎯 Meta de Retiro")
-    liquidez_deseada = st.number_input("Liquidez Extra Inicial ($)", value=500000, step=10000)
+    liquidez_deseada = st.number_input("Liquidez deseada despues de la compra ($)", value=500000, step=10000)
     
     st.header("💸 Fase de Desembolso")
-    retiro_buffer_hoy = st.number_input(f"Gasto 2 años (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
-    inflacion_gastos = st.number_input("Inflación de Gastos (%)", value=3.0, step=0.5) / 100
+    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual para vivir de inversiones (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
+    inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5) / 100
     
-    años_proyeccion = st.slider("Horizonte (Años)", 4, 60, 48)
+    años_proyeccion = st.slider("Cantidad de años para vivir de inversiones", 4, 60, 48)
 
     st.header("🛡️ Plan de Contingencia")
-    años_extra_trabajo = st.slider("Años extra de trabajo post-compra", 0, 15, 0)
-    inversion_extra_mensual = st.number_input("Inversión mensual extra ($)", value=0, step=100)
+    años_extra_trabajo = st.slider("Años extra de trabajo post-compra si la meta no se cumple", 0, 15, 0)
+    inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=0, step=100)
 
 # 3. Motor de Cálculo
 meses = años_proyeccion * 12
@@ -61,7 +61,6 @@ datos.append({
 })
 
 for mes in range(1, meses + 1):
-    # Cálculo dinámico basado en el año actual
     año_actual = YEAR_ACTUAL + (mes // 12)
     nombre_mes_actual = MESES_NOMBRES[mes % 12]
     
@@ -150,9 +149,10 @@ with col_chart:
 st.markdown("---")
 k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({YEAR_ACTUAL + años_proyeccion})", f"${df['Capital ($)'].iloc[-1]:,}")
-with k2: st.metric(f"Buffer 2 Años (Hoy {YEAR_ACTUAL})", f"${retiro_buffer_hoy:,}")
+# CORREGIDO: Se cambiaron las comillas curvas por rectas en la línea de abajo
+with k2: st.metric(f"Monto del buffer a 2 Años (Hoy {YEAR_ACTUAL})", f"${retiro_buffer_hoy:,}")
 with k3: 
-    if meta_lograda: st.success(f"🎯 Compra en {mes_nombre_meta} {año_meta}")
+    if meta_lograda: st.success(f"🎯 Compra del parta realizada en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
 if meta_lograda:
@@ -175,3 +175,4 @@ if meta_lograda:
     m1, m2 = st.columns(2)
     m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
     m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
+
