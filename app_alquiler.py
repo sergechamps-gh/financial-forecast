@@ -5,7 +5,7 @@ from datetime import datetime
 
 # 1. Configuración
 YEAR_ACTUAL = datetime.now().year
-st.set_page_config(page_title="Serge Rental Strategy v1.1", layout="wide")
+st.set_page_config(page_title="Serge Rental Strategy v1.2", layout="wide")
 st.title("🏢 Dashboard de Libertad Financiera (Alquiler)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -46,17 +46,15 @@ renta_actualizada = renta_hoy
 gasto_buffer_ajustado = retiro_buffer_hoy
 año_final_proy = YEAR_ACTUAL + años_proyeccion
 
-inyectado_anual = 0 ; retiro_anual = 0
+# Contadores para KPIs
+total_pagado_renta = 0
+renta_al_inicio_retiro = 0
+renta_al_final = 0
 
-# Fila Inicio
-datos.append({
-    "Año": YEAR_ACTUAL, "Capital ($)": round(cap_inicial), "Renta Mens.": round(renta_hoy),
-    "Inyectado ($)": 0, "Retiro ($)": 0, "Status": "Inicio 🚀"
-})
+inyectado_anual = 0 ; retiro_anual = 0
 
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
-    nombre_mes_actual = MESES_NOMBRES[mes % 12]
     
     renta_actualizada *= (1 + (inflacion_renta / 12))
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
@@ -64,28 +62,29 @@ for mes in range(1, meses + 1):
     if not meta_lograda and capital_actual >= liquidez_deseada:
         meta_lograda = True
         año_meta = año_actual
-        mes_nombre_meta = nombre_mes_actual
+        mes_nombre_meta = MESES_NOMBRES[mes % 12]
         mes_de_la_meta = mes
+        renta_al_inicio_retiro = renta_actualizada
 
     if not meta_lograda:
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
     else:
-        # Lógica de Contingencia
         meses_desde_meta = mes - mes_de_la_meta
         usa_plan = años_extra_trabajo > 0
-        es_periodo_extra = usa_plan and meses_desde_meta <= (años_extra_trabajo * 12)
+        periodo_gracia_meses = (años_extra_trabajo * 12) if usa_plan else 0
+        es_periodo_extra = meses_desde_meta <= periodo_gracia_meses
         
         if es_periodo_extra:
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
         else:
-            # Pagar Renta Mensual
+            # Fase de Retiro Real
             capital_actual -= renta_actualizada
+            total_pagado_renta += renta_actualizada
             retiro_anual += renta_actualizada
-            # Pagar Gasto Bianual (cada 24 meses de retiro real)
-            periodo_gracia = (años_extra_trabajo * 12) if usa_plan else 0
-            meses_post_trabajo = meses_desde_meta - periodo_gracia
+            
+            meses_post_trabajo = meses_desde_meta - periodo_gracia_meses
             if meses_post_trabajo == 1 or (meses_post_trabajo > 1 and meses_post_trabajo % 24 == 0):
                 capital_actual -= gasto_buffer_ajustado
                 retiro_anual += gasto_buffer_ajustado
@@ -94,8 +93,8 @@ for mes in range(1, meses + 1):
     if capital_actual <= 0 and año_agotamiento is None: año_agotamiento = año_actual
 
     if mes % 12 == 0:
-        periodo_gracia = (años_extra_trabajo * 12) if años_extra_trabajo > 0 else 0
-        es_retiro = meta_lograda and (mes - mes_de_la_meta > periodo_gracia)
+        renta_al_final = renta_actualizada
+        es_retiro = meta_lograda and (mes - mes_de_la_meta > (años_extra_trabajo * 12))
         datos.append({
             "Año": año_actual,
             "Capital ($)": round(capital_actual) if capital_actual > 0 else 0,
@@ -108,30 +107,39 @@ for mes in range(1, meses + 1):
 
 df = pd.DataFrame(datos)
 
-# 4. Layout
+# 4. Visualización - KPIs Superiores
+st.markdown("---")
+kpi1, kpi2, kpi3 = st.columns(3)
+kpi1.metric(f"Capital Final ({año_final_proy})", f"${capital_actual:,.0f}")
+kpi2.metric(f"Buffer 2 años (Ajustado)", f"${gasto_buffer_ajustado:,.0f}")
+kpi3.metric("Total Renta Pagada (Vida)", f"${total_pagado_renta:,.0f}")
+
+st.markdown("---")
+kpi4, kpi5 = st.columns(2)
+kpi4.write(f"🏷️ **Renta al iniciar retiro:** ${renta_al_inicio_retiro:,.0f}/mes")
+kpi5.write(f"📈 **Renta al final ({año_final_proy}):** ${renta_al_final:,.0f}/mes")
+
+# Gráficos y Tabla
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
-    st.subheader(f"📑 Simulación Renta vs Capital")
+    st.subheader("📑 Simulación Detallada")
     st.dataframe(df.style.format({
         "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
         "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"
-    }), height=450, use_container_width=True, hide_index=True)
+    }), height=400, use_container_width=True, hide_index=True)
 
 with col_chart:
+    st.subheader("📈 Curva de Capital")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
-    fig.update_layout(template="plotly_dark", height=450, margin=dict(l=0,r=0,t=20,b=0))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=0,r=0,t=20,b=0))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. Banners de Análisis
-st.markdown("---")
+# Banners de Análisis
 if meta_lograda:
     usa_plan = años_extra_trabajo > 0
     año_libertad = año_meta + (años_extra_trabajo if usa_plan else 0)
     if año_agotamiento:
-        st.warning(f"⚠️ **Alerta:** Alcanzas la meta en {mes_nombre_meta} {año_meta}, pero con este nivel de gasto el capital muere en **{año_agotamiento}**. Sugerencia: Sube los años extra de trabajo o el rendimiento.")
+        st.warning(f"⚠️ **Alerta:** Meta alcanzada en {mes_nombre_meta} {año_meta}, pero el capital se agota en **{año_agotamiento}**.")
     else:
-        txt = f"Meta alcanzada en {mes_nombre_meta} {año_meta}"
-        if usa_plan: txt += f" y retiro iniciado en {año_libertad} tras periodo extra de inversión."
-        else: txt += " y retiro iniciado de inmediato."
-        st.info(f"🚀 **Libertad Financiera Lograda:** {txt} Sostenible hasta **{año_final_proy}**.")
+        st.success(f"🚀 **Libertad Lograda:** Retiro sostenible hasta **{año_final_proy}**. Inicio: {año_libertad}.")
