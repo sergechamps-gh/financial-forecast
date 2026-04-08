@@ -1,9 +1,12 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+from datetime import datetime  # <--- Nueva librería
 
-# 1. Configuración
-st.set_page_config(page_title="Serge Financial Strategy v3.39", layout="wide")
+# 1. Configuración de tiempo dinámica
+YEAR_ACTUAL = datetime.now().year
+
+st.set_page_config(page_title=f"Serge Financial Strategy v3.41", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -17,14 +20,14 @@ with st.sidebar:
     rendimiento_anual = st.number_input("Rendimiento Mercado (%)", value=10.0, step=0.5) / 100
     
     st.header("🏠 Inmueble")
-    precio_hoy = st.number_input("Precio Aparta Hoy ($)", value=200000, step=5000)
+    precio_hoy = st.number_input(f"Precio Aparta (en {YEAR_ACTUAL}) ($)", value=200000, step=5000)
     inflacion_inmueble = st.number_input("Inflación Inmueble (%)", value=4.0, step=0.5) / 100
     
     st.header("🎯 Meta de Retiro")
     liquidez_deseada = st.number_input("Liquidez Extra Inicial ($)", value=500000, step=10000)
     
     st.header("💸 Fase de Desembolso")
-    retiro_buffer_hoy = st.number_input("Gasto 2 años (valor hoy $)", value=60000, step=5000)
+    retiro_buffer_hoy = st.number_input(f"Gasto 2 años (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
     inflacion_gastos = st.number_input("Inflación de Gastos (%)", value=3.0, step=0.5) / 100
     
     años_proyeccion = st.slider("Horizonte (Años)", 4, 60, 48)
@@ -50,15 +53,16 @@ capital_post_meta = 0
 inyectado_anual = 0
 retiro_anual = 0
 
-# Fila Génesis
+# Fila Génesis (Año Dinámico)
 datos.append({
-    "Año": 2026, "Capital ($)": round(cap_inicial), "Precio Apt": f"{round(precio_hoy):,}",
+    "Año": YEAR_ACTUAL, "Capital ($)": round(cap_inicial), "Precio Apt": f"{round(precio_hoy):,}",
     "Inyectado ($)": 0, "Retiro ($)": 0, 
     "Gasto_2Y": round(retiro_buffer_hoy), "Status": "Inicio 🚀"
 })
 
 for mes in range(1, meses + 1):
-    año_actual = 2026 + (mes // 12)
+    # Cálculo dinámico basado en el año actual
+    año_actual = YEAR_ACTUAL + (mes // 12)
     nombre_mes_actual = MESES_NOMBRES[mes % 12]
     
     if not meta_lograda:
@@ -145,8 +149,8 @@ with col_chart:
 # 5. KPIs y Banners
 st.markdown("---")
 k1, k2, k3 = st.columns(3)
-with k1: st.metric(f"Capital Final ({2026 + años_proyeccion})", f"${df['Capital ($)'].iloc[-1]:,}")
-with k2: st.metric("Buffer 2 Años (Hoy)", f"${retiro_buffer_hoy:,}")
+with k1: st.metric(f"Capital Final ({YEAR_ACTUAL + años_proyeccion})", f"${df['Capital ($)'].iloc[-1]:,}")
+with k2: st.metric(f"Buffer 2 Años (Hoy {YEAR_ACTUAL})", f"${retiro_buffer_hoy:,}")
 with k3: 
     if meta_lograda: st.success(f"🎯 Compra en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
@@ -156,10 +160,7 @@ if meta_lograda:
     año_libertad = año_meta + (años_extra_trabajo if usa_plan else 0)
     
     if año_agotamiento:
-        contexto_plan = ""
-        if usa_plan:
-            contexto_plan = f" y haber trabajado {años_extra_trabajo} años más invirtiendo ${inversion_extra_mensual:,} al mes,"
-        
+        contexto_plan = f" y haber trabajado {años_extra_trabajo} años más invirtiendo ${inversion_extra_mensual:,} al mes," if usa_plan else ","
         st.warning(f"⚠️\n\n**Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}{contexto_plan} el capital se agota en el año **{año_agotamiento}**. Ajusta rendimiento, gastos o modifica el plan de contingencia.")
     else:
         inicio_texto = f"Apartamento comprado en {mes_nombre_meta} de {año_meta}"
@@ -172,13 +173,5 @@ if meta_lograda:
 
     st.markdown("---")
     m1, m2 = st.columns(2)
-    # MODIFICACIÓN: Color coding y tamaño balanceado
-    m1.markdown(f"""
-        <p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p>
-        <p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>
-        """, unsafe_allow_html=True)
-    
-    m2.markdown(f"""
-        <p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p>
-        <p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>
-        """, unsafe_allow_html=True)
+    m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
+    m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
