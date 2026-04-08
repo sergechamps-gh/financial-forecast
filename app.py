@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # 1. Configuración
-st.set_page_config(page_title="Serge Financial Strategy v3.35", layout="wide")
+st.set_page_config(page_title="Serge Financial Strategy v3.38", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -30,7 +30,6 @@ with st.sidebar:
     años_proyeccion = st.slider("Horizonte (Años)", 4, 60, 48)
 
     st.header("🛡️ Plan de Contingencia")
-    # CAMBIO: Extendido de 10 a 15 años
     años_extra_trabajo = st.slider("Años extra de trabajo post-compra", 0, 15, 0)
     inversion_extra_mensual = st.number_input("Inversión mensual extra ($)", value=0, step=100)
 
@@ -49,13 +48,12 @@ costo_final_aparta = 0
 capital_post_meta = 0
 
 inyectado_anual = 0
-interes_anual = 0
 retiro_anual = 0
 
 # Fila Génesis
 datos.append({
     "Año": 2026, "Capital ($)": round(cap_inicial), "Precio Apt": f"{round(precio_hoy):,}",
-    "Inyectado ($)": 0, "Intereses ($)": 0, "Retiro ($)": 0, 
+    "Inyectado ($)": 0, "Retiro ($)": 0, 
     "Gasto_2Y": round(retiro_buffer_hoy), "Status": "Inicio 🚀"
 })
 
@@ -102,7 +100,6 @@ for mes in range(1, meses + 1):
     
     rendimiento_mes = capital_actual * (rendimiento_anual / 12)
     capital_actual += rendimiento_mes
-    interes_anual += rendimiento_mes
 
     if capital_actual <= 0 and año_agotamiento is None:
         año_agotamiento = año_actual
@@ -115,12 +112,11 @@ for mes in range(1, meses + 1):
             "Capital ($)": round(capital_actual) if capital_actual > 0 else 0,
             "Precio Apt": "COMPRADO" if meta_lograda else f"{round(precio_aparta):,}",
             "Inyectado ($)": round(inyectado_anual),
-            "Intereses ($)": round(interes_anual),
             "Retiro ($)": round(retiro_anual),
             "Gasto_2Y": round(gasto_buffer_ajustado),
             "Status": "Retiro 🌴" if es_retiro else "Activo 💼"
         })
-        inyectado_anual = 0; interes_anual = 0; retiro_anual = 0
+        inyectado_anual = 0; retiro_anual = 0
 
 df = pd.DataFrame(datos)
 
@@ -128,10 +124,15 @@ df = pd.DataFrame(datos)
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"📑 Proyección a {años_proyeccion} Años")
-    st.dataframe(df.drop(columns=['Gasto_2Y']).style.format({
-        "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
-        "Inyectado ($)": "{:,.0f}", "Intereses ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"
-    }), height=400, use_container_width=True)
+    st.dataframe(
+        df.drop(columns=['Gasto_2Y']).style.format({
+            "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
+            "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"
+        }), 
+        height=400, 
+        use_container_width=True,
+        hide_index=True
+    )
 
 with col_chart:
     st.subheader("📈 Capital vs Gasto")
@@ -171,5 +172,6 @@ if meta_lograda:
 
     st.markdown("---")
     m1, m2 = st.columns(2)
-    m1.write(f"🏠 **Costo Final Apartamento:** `${costo_final_aparta:,.0f}`")
-    m2.write(f"💰 **Capital Post-Compra:** `${capital_post_meta:,.0f}`")
+    # MODIFICACIÓN: Texto más grande y números en bold usando HTML
+    m1.markdown(f"### 🏠 Costo Final Apartamento: **${costo_final_aparta:,.0f}**")
+    m2.markdown(f"### 💰 Capital Post-Compra: **${capital_post_meta:,.0f}**")
