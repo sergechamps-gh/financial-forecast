@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # 1. Configuración
-st.set_page_config(page_title="Serge Financial Strategy v3.38", layout="wide")
+st.set_page_config(page_title="Serge Financial Strategy v3.39", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -172,6 +172,13 @@ if meta_lograda:
 
     st.markdown("---")
     m1, m2 = st.columns(2)
-    # MODIFICACIÓN: Texto más grande y números en bold usando HTML
-    m1.markdown(f"### 🏠 Costo Final Apartamento: **${costo_final_aparta:,.0f}**")
-    m2.markdown(f"### 💰 Capital Post-Compra: **${capital_post_meta:,.0f}**")
+    # MODIFICACIÓN: Color coding y tamaño balanceado
+    m1.markdown(f"""
+        <p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p>
+        <p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>
+        """, unsafe_allow_html=True)
+    
+    m2.markdown(f"""
+        <p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p>
+        <p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>
+        """, unsafe_allow_html=True)
