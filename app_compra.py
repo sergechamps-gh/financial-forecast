@@ -6,8 +6,8 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v1.7", layout="wide")
-st.title("🧬 Dashboard de Libertad Financiera (Compra)")
+st.set_page_config(page_title=f"Serge Financial Strategy v3.42", layout="wide")
+st.title("🧬 Dashboard de Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -24,16 +24,16 @@ with st.sidebar:
     inflacion_inmueble = st.number_input("Inflación Inmueble (%)", value=4.0, step=0.5) / 100
     
     st.header("🎯 Meta de Retiro")
-    liquidez_deseada = st.number_input("Liquidez deseada después de la compra ($)", value=500000, step=10000)
+    liquidez_deseada = st.number_input("Liquidez deseada despues de la compra ($)", value=500000, step=10000)
     
     st.header("💸 Fase de Desembolso")
-    retiro_buffer_hoy = st.number_input(f"Gasto bianual (SIN vivienda) (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
+    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual para vivir de inversiones (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
     inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5) / 100
     
-    años_proyeccion = st.slider("Años de horizonte financiero", 4, 60, 48)
+    años_proyeccion = st.slider("Cantidad de años para vivir de inversiones", 4, 60, 48)
 
     st.header("🛡️ Plan de Contingencia")
-    años_extra_trabajo = st.slider("Años extra de trabajo post-compra", 0, 15, 0)
+    años_extra_trabajo = st.slider("Años extra de trabajo post-compra si la meta no se cumple", 0, 15, 0)
     inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=0, step=100)
 
 # 3. Motor de Cálculo
@@ -49,8 +49,16 @@ gasto_buffer_ajustado = retiro_buffer_hoy
 año_agotamiento = None
 costo_final_aparta = 0
 capital_post_meta = 0
+
 inyectado_anual = 0
 retiro_anual = 0
+
+# Fila Génesis
+datos.append({
+    "Año": YEAR_ACTUAL, "Capital ($)": round(cap_inicial), "Precio Apt": f"{round(precio_hoy):,}",
+    "Inyectado ($)": 0, "Retiro ($)": 0, 
+    "Gasto_2Y": round(retiro_buffer_hoy), "Status": "Inicio 🚀"
+})
 
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
@@ -67,7 +75,6 @@ for mes in range(1, meses + 1):
         mes_de_la_compra = mes
         costo_final_aparta = precio_aparta
         
-        # Al comprar, restamos el aparta. El buffer se resta si no hay plan de contingencia inmediato.
         usa_plan = años_extra_trabajo > 0 and inversion_extra_mensual > 0
         gasto_inicial = precio_aparta + (gasto_buffer_ajustado if not usa_plan else 0)
         
@@ -89,11 +96,13 @@ for mes in range(1, meses + 1):
         else:
             periodo_gracia = (años_extra_trabajo * 12) if usa_plan else 0
             meses_post_trabajo = meses_desde_compra - periodo_gracia
+            
             if meses_post_trabajo == 1 or (meses_post_trabajo > 1 and meses_post_trabajo % 24 == 0):
                 capital_actual -= gasto_buffer_ajustado
                 retiro_anual += gasto_buffer_ajustado
     
-    capital_actual += capital_actual * (rendimiento_anual / 12)
+    rendimiento_mes = capital_actual * (rendimiento_anual / 12)
+    capital_actual += rendimiento_mes
 
     if capital_actual <= 0 and año_agotamiento is None:
         año_agotamiento = año_actual
@@ -103,7 +112,7 @@ for mes in range(1, meses + 1):
         es_retiro = meta_lograda and (mes - mes_de_la_compra > periodo_gracia)
         datos.append({
             "Año": año_actual,
-            "Capital ($)": round(capital_actual), # VISIBILIDAD DE NEGATIVOS
+            "Capital ($)": round(capital_actual), # MOSTRAR NEGATIVOS
             "Precio Apt": "COMPRADO" if meta_lograda else f"{round(precio_aparta):,}",
             "Inyectado ($)": round(inyectado_anual),
             "Retiro ($)": round(retiro_anual),
@@ -117,16 +126,20 @@ df = pd.DataFrame(datos)
 # 4. Layout
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
-    st.subheader(f"📑 Simulación a {años_proyeccion} Años")
-    st.dataframe(df.drop(columns=['Gasto_2Y']).style.format({
-        "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
-        "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"
-    }), height=400, use_container_width=True, hide_index=True)
+    st.subheader(f"📑 Proyección a {años_proyeccion} Años")
+    st.dataframe(
+        df.drop(columns=['Gasto_2Y']).style.format({
+            "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
+            "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"
+        }), 
+        height=400, use_container_width=True, hide_index=True
+    )
 
 with col_chart:
     st.subheader("📈 Capital vs Gasto")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='royalblue', width=3)))
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_2Y'], name="Gasto (2Y)", line=dict(color='orange', dash='dot')))
     fig.add_hline(y=0, line_dash="dash", line_color="red")
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
@@ -136,9 +149,9 @@ st.markdown("---")
 año_final_proy = YEAR_ACTUAL + años_proyeccion
 k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
-with k2: st.metric(f"Buffer 2Y (Hoy {YEAR_ACTUAL})", f"${retiro_buffer_hoy:,}")
+with k2: st.metric(f"Monto del buffer a 2 Años (Hoy {YEAR_ACTUAL})", f"${retiro_buffer_hoy:,}")
 with k3: 
-    if meta_lograda: st.success(f"🎯 Compra realizada: {año_meta}")
+    if meta_lograda: st.success(f"🎯 Compra del aparta realizada en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
 if meta_lograda:
@@ -146,14 +159,18 @@ if meta_lograda:
     año_libertad = año_meta + (años_extra_trabajo if usa_plan else 0)
     
     if año_agotamiento:
-        st.warning(f"⚠️\n\n**Hito Alcanzado pero Insuficiente:** Se logró el capital para comprar en **{año_meta}**, pero el remanente se agota en el año **{año_agotamiento}**. Para cubrir los {años_proyeccion} años, necesitas subir la 'Liquidez deseada' o ajustar el plan.")
+        contexto_plan = f" y haber trabajado {años_extra_trabajo} años más invirtiendo ${inversion_extra_mensual:,} al mes," if usa_plan else ","
+        st.warning(f"⚠️\n\n**Hito Alcanzado pero Insuficiente:** Después de la compra en {mes_nombre_meta} {año_meta}{contexto_plan} el capital se agota en el año **{año_agotamiento}**. Para cubrir el horizonte de {años_proyeccion} años, aumenta la 'Liquidez deseada' o ajusta el plan.")
     else:
         inicio_texto = f"Apartamento comprado en {mes_nombre_meta} de {año_meta}"
-        if usa_plan: inicio_texto += f" y retiro iniciado en {mes_nombre_meta} de **{año_libertad}**"
-        else: inicio_texto += " y retiro iniciado inmediatamente"
-        st.info(f"🚀\n\n**Libertad Financiera Lograda:** {inicio_texto}. El capital es suficiente hasta el año **{año_final_proy}**.")
+        if usa_plan:
+            inicio_texto += f" y retiro iniciado en {mes_nombre_meta} de **{año_libertad}**"
+        else:
+            inicio_texto += " y retiro iniciado inmediatamente"
+            
+        st.info(f"🚀\n\n**Libertad Financiera Lograda:** {inicio_texto}. El capital es suficiente hasta el año **{año_final_proy}** cubriendo los {años_proyeccion} años proyectados de forma sostenible.")
 
-st.markdown("---")
-m1, m2 = st.columns(2)
-m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
-m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
+    st.markdown("---")
+    m1, m2 = st.columns(2)
+    m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
+    m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
