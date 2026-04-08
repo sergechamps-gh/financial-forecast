@@ -5,7 +5,7 @@ from datetime import datetime
 
 # 1. Configuración
 YEAR_ACTUAL = datetime.now().year
-st.set_page_config(page_title="Serge Rental Strategy v1.3", layout="wide")
+st.set_page_config(page_title="Serge Rental Strategy v1.4", layout="wide")
 st.title("🏢 Dashboard de Libertad Financiera (Alquiler)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -51,6 +51,13 @@ renta_al_inicio_retiro = 0
 renta_al_final = 0
 inyectado_anual = 0 ; retiro_anual = 0
 
+# Fila Inicio
+datos.append({
+    "Año": YEAR_ACTUAL, "Capital ($)": round(cap_inicial), "Renta Mens.": round(renta_hoy),
+    "Total Renta Acum.": 0, "Gasto_2Y": round(retiro_buffer_hoy),
+    "Inyectado ($)": 0, "Retiro ($)": 0, "Status": "Inicio 🚀"
+})
+
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
     renta_actualizada *= (1 + (inflacion_renta / 12))
@@ -94,6 +101,8 @@ for mes in range(1, meses + 1):
             "Año": año_actual,
             "Capital ($)": round(capital_actual) if capital_actual > 0 else 0,
             "Renta Mens.": round(renta_actualizada),
+            "Total Renta Acum.": round(total_pagado_renta),
+            "Gasto_2Y": round(gasto_buffer_ajustado),
             "Inyectado ($)": round(inyectado_anual),
             "Retiro ($)": round(retiro_anual),
             "Status": "Retiro 🌴" if es_retiro else "Activo 💼"
@@ -103,26 +112,33 @@ for mes in range(1, meses + 1):
 df = pd.DataFrame(datos)
 
 # 4. Layout
-col_table, col_chart = st.columns([1.2, 0.8])
+col_table, col_chart = st.columns([1.1, 0.9])
 with col_table:
     st.subheader("📑 Simulación Detallada")
-    st.dataframe(df.style.format({
+    st.dataframe(df.drop(columns=['Total Renta Acum.', 'Gasto_2Y']).style.format({
         "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
         "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"
     }), height=400, use_container_width=True, hide_index=True)
 
 with col_chart:
-    st.subheader("📈 Curva de Capital")
+    st.subheader("📈 Curva de Capital vs Gasto Acumulado")
     fig = go.Figure()
+    # Turquesa: Capital (Width 3 para destacar)
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
-    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=0,r=0,t=20,b=0))
+    # Rojo: Total Renta Pagada
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Total Renta Acum.'], name="Renta Quemada (Rojo)", line=dict(color='#ff4b4b', dash='solid')))
+    # Naranja: Gasto_2Y (punteada)
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_2Y'], name="Gasto 2Y (Naranja)", line=dict(color='orange', dash='dot')))
+    
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=0,r=0,t=20,b=0), legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
 # 5. KPIs y Banners
 st.markdown("---")
 k1, k2, k3 = st.columns(3)
 k1.metric(f"Capital Final ({año_final_proy})", f"${capital_actual:,.0f}")
-k2.metric(f"Monto del buffer a 2 Años (Ajustado)", f"${gasto_buffer_ajustado:,.0f}")
+# CAMBIO: Métrica estática del buffer original a Hoy
+k2.metric(f"Monto del buffer a 2 Años (Hoy {YEAR_ACTUAL})", f"${retiro_buffer_hoy:,.0f}")
 k3.metric("Total Renta Pagada (Vida)", f"${total_pagado_renta:,.0f}")
 
 if meta_lograda:
@@ -132,13 +148,12 @@ if meta_lograda:
         st.warning(f"⚠️\n\n**Alerta de Sistema:** Después de alcanzar la meta en {mes_nombre_meta} {año_meta}, el capital se agota en el año **{año_agotamiento}**. Ajusta rendimiento, gastos o modifica el plan de contingencia.")
     else:
         inicio_texto = f"Meta alcanzada en {mes_nombre_meta} de {año_meta}"
-        if usa_plan:
-            inicio_texto += f" y retiro iniciado en {mes_nombre_meta} de **{año_libertad}**"
-        else:
-            inicio_texto += " y retiro iniciado inmediatamente"
+        if usa_plan: inicio_texto += f" y retiro iniciado en {mes_nombre_meta} de **{año_libertad}**"
+        else: inicio_texto += " y retiro iniciado inmediatamente"
         st.info(f"🚀\n\n**Libertad Financiera Lograda:** {inicio_texto}. El capital es suficiente hasta el año **{año_final_proy}** cubriendo los {años_proyeccion} años proyectados de forma sostenible.")
 
 st.markdown("---")
 m1, m2 = st.columns(2)
-m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏷️ Renta al iniciar retiro</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${renta_al_inicio_retiro:,.0f}/mes</p>", unsafe_allow_html=True)
-m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>📈 Renta al final ({año_final_proy})</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${renta_al_final:,.0f}/mes</p>", unsafe_allow_html=True)
+# CAMBIO: Estética de colores invertida (Verde al inicio, Rojo al final)
+m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏷️ Renta al iniciar retiro</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${renta_al_inicio_retiro:,.0f}/mes</p>", unsafe_allow_html=True)
+m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>📈 Renta al final ({año_final_proy})</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${renta_al_final:,.0f}/mes</p>", unsafe_allow_html=True)
