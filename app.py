@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v3.41", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v3.42", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -53,7 +53,7 @@ capital_post_meta = 0
 inyectado_anual = 0
 retiro_anual = 0
 
-# Fila Génesis (Año Dinámico)
+# Fila Génesis
 datos.append({
     "Año": YEAR_ACTUAL, "Capital ($)": round(cap_inicial), "Precio Apt": f"{round(precio_hoy):,}",
     "Inyectado ($)": 0, "Retiro ($)": 0, 
@@ -132,9 +132,7 @@ with col_table:
             "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
             "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"
         }), 
-        height=400, 
-        use_container_width=True,
-        hide_index=True
+        height=400, use_container_width=True, hide_index=True
     )
 
 with col_chart:
@@ -147,9 +145,9 @@ with col_chart:
 
 # 5. KPIs y Banners
 st.markdown("---")
+año_final_proy = YEAR_ACTUAL + años_proyeccion
 k1, k2, k3 = st.columns(3)
-with k1: st.metric(f"Capital Final ({YEAR_ACTUAL + años_proyeccion})", f"${df['Capital ($)'].iloc[-1]:,}")
-# CORREGIDO: Se cambiaron las comillas curvas por rectas en la línea de abajo
+with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
 with k2: st.metric(f"Monto del buffer a 2 Años (Hoy {YEAR_ACTUAL})", f"${retiro_buffer_hoy:,}")
 with k3: 
     if meta_lograda: st.success(f"🎯 Compra del parta realizada en {mes_nombre_meta} {año_meta}")
@@ -169,10 +167,10 @@ if meta_lograda:
         else:
             inicio_texto += " y retiro iniciado inmediatamente"
             
-        st.info(f"🚀\n\n**Libertad Financiera Lograda:** {inicio_texto}. El capital es suficiente para cubrir los {años_proyeccion} años proyectados de forma sostenible.")
+        # CAMBIO SOLICITADO: Texto dinámico con el año final de la proyección
+        st.info(f"🚀\n\n**Libertad Financiera Lograda:** {inicio_texto}. El capital es suficiente hasta el año **{año_final_proy}** cubriendo los {años_proyeccion} años proyectados de forma sostenible.")
 
     st.markdown("---")
     m1, m2 = st.columns(2)
     m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
     m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
-
