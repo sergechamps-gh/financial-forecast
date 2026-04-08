@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. Configuración
 YEAR_ACTUAL = datetime.now().year
 st.set_page_config(page_title="Serge Independence Strategy v1.5", layout="wide")
-st.title("🏠 Estrategia de Independencia: Salida de Casa (Alquiler)")
+st.title("🏢 Estrategia de Libertad financiera (Alquiler)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
