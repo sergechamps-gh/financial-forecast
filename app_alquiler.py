@@ -5,7 +5,7 @@ from datetime import datetime
 
 # 1. Configuración
 YEAR_ACTUAL = datetime.now().year
-st.set_page_config(page_title="Serge Rental Strategy v1.2", layout="wide")
+st.set_page_config(page_title="Serge Rental Strategy v1.3", layout="wide")
 st.title("🏢 Dashboard de Libertad Financiera (Alquiler)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -46,16 +46,13 @@ renta_actualizada = renta_hoy
 gasto_buffer_ajustado = retiro_buffer_hoy
 año_final_proy = YEAR_ACTUAL + años_proyeccion
 
-# Contadores para KPIs
 total_pagado_renta = 0
 renta_al_inicio_retiro = 0
 renta_al_final = 0
-
 inyectado_anual = 0 ; retiro_anual = 0
 
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
-    
     renta_actualizada *= (1 + (inflacion_renta / 12))
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
 
@@ -71,15 +68,13 @@ for mes in range(1, meses + 1):
         inyectado_anual += ahorro_mensual
     else:
         meses_desde_meta = mes - mes_de_la_meta
-        usa_plan = años_extra_trabajo > 0
-        periodo_gracia_meses = (años_extra_trabajo * 12) if usa_plan else 0
+        periodo_gracia_meses = (años_extra_trabajo * 12)
         es_periodo_extra = meses_desde_meta <= periodo_gracia_meses
         
         if es_periodo_extra:
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
         else:
-            # Fase de Retiro Real
             capital_actual -= renta_actualizada
             total_pagado_renta += renta_actualizada
             retiro_anual += renta_actualizada
@@ -107,19 +102,7 @@ for mes in range(1, meses + 1):
 
 df = pd.DataFrame(datos)
 
-# 4. Visualización - KPIs Superiores
-st.markdown("---")
-kpi1, kpi2, kpi3 = st.columns(3)
-kpi1.metric(f"Capital Final ({año_final_proy})", f"${capital_actual:,.0f}")
-kpi2.metric(f"Buffer 2 años (Ajustado)", f"${gasto_buffer_ajustado:,.0f}")
-kpi3.metric("Total Renta Pagada (Vida)", f"${total_pagado_renta:,.0f}")
-
-st.markdown("---")
-kpi4, kpi5 = st.columns(2)
-kpi4.write(f"🏷️ **Renta al iniciar retiro:** ${renta_al_inicio_retiro:,.0f}/mes")
-kpi5.write(f"📈 **Renta al final ({año_final_proy}):** ${renta_al_final:,.0f}/mes")
-
-# Gráficos y Tabla
+# 4. Layout
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader("📑 Simulación Detallada")
@@ -135,11 +118,27 @@ with col_chart:
     fig.update_layout(template="plotly_dark", height=400, margin=dict(l=0,r=0,t=20,b=0))
     st.plotly_chart(fig, use_container_width=True)
 
-# Banners de Análisis
+# 5. KPIs y Banners
+st.markdown("---")
+k1, k2, k3 = st.columns(3)
+k1.metric(f"Capital Final ({año_final_proy})", f"${capital_actual:,.0f}")
+k2.metric(f"Monto del buffer a 2 Años (Ajustado)", f"${gasto_buffer_ajustado:,.0f}")
+k3.metric("Total Renta Pagada (Vida)", f"${total_pagado_renta:,.0f}")
+
 if meta_lograda:
     usa_plan = años_extra_trabajo > 0
     año_libertad = año_meta + (años_extra_trabajo if usa_plan else 0)
     if año_agotamiento:
-        st.warning(f"⚠️ **Alerta:** Meta alcanzada en {mes_nombre_meta} {año_meta}, pero el capital se agota en **{año_agotamiento}**.")
+        st.warning(f"⚠️\n\n**Alerta de Sistema:** Después de alcanzar la meta en {mes_nombre_meta} {año_meta}, el capital se agota en el año **{año_agotamiento}**. Ajusta rendimiento, gastos o modifica el plan de contingencia.")
     else:
-        st.success(f"🚀 **Libertad Lograda:** Retiro sostenible hasta **{año_final_proy}**. Inicio: {año_libertad}.")
+        inicio_texto = f"Meta alcanzada en {mes_nombre_meta} de {año_meta}"
+        if usa_plan:
+            inicio_texto += f" y retiro iniciado en {mes_nombre_meta} de **{año_libertad}**"
+        else:
+            inicio_texto += " y retiro iniciado inmediatamente"
+        st.info(f"🚀\n\n**Libertad Financiera Lograda:** {inicio_texto}. El capital es suficiente hasta el año **{año_final_proy}** cubriendo los {años_proyeccion} años proyectados de forma sostenible.")
+
+st.markdown("---")
+m1, m2 = st.columns(2)
+m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏷️ Renta al iniciar retiro</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${renta_al_inicio_retiro:,.0f}/mes</p>", unsafe_allow_html=True)
+m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>📈 Renta al final ({año_final_proy})</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${renta_al_final:,.0f}/mes</p>", unsafe_allow_html=True)
