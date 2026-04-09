@@ -23,7 +23,7 @@ with st.sidebar:
     renta_hoy = st.number_input(f"Costo Alquiler Mensual (en {YEAR_ACTUAL}) ($)", value=1200, step=100)
     inflacion_renta = st.number_input("Inflación Alquiler Anual (%)", value=3.5, step=0.5) / 100
     
-    st.header("🎯 Meta de Retiro")
+    st.header("🎯 Objetivo de Capital")
     liquidez_deseada = st.number_input("Capital Mínimo Requerido ($)", value=500000, step=10000)
     
     st.header("💸 Gastos de Vida")
@@ -67,7 +67,7 @@ for mes in range(1, meses + 1):
     if mes % 12 == 0:
         datos.append({
             "Año": año_actual,
-            "Capital ($)": round(capital_actual), # MOSTRAR NEGATIVOS
+            "Capital ($)": round(capital_actual), # VISIBILIDAD DE NEGATIVOS
             "Renta Mensual": round(renta_actualizada),
             "Status": "Libertad 🌴" if meta_lograda else "Acumulando 💼"
         })
@@ -84,18 +84,24 @@ with col_chart:
     st.subheader("📈 Evolución del Capital")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
-    fig.add_hline(y=0, line_dash="dash", line_color="red") # LÍNEA ROJA DE PELIGRO
+    fig.add_hline(y=0, line_dash="dash", line_color="red")
     fig.update_layout(template="plotly_dark")
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. Banners de Sostenibilidad (Lógica Serge v1.7)
+# 5. Banners de Sostenibilidad
 st.markdown("---")
 año_final = YEAR_ACTUAL + años_proyeccion
+k1, k2, k3 = st.columns(3)
+with k1: st.metric(f"Capital Final ({año_final})", f"${df['Capital ($)'].iloc[-1]:,}")
+with k2: st.metric(f"Buffer 2Y (Hoy {YEAR_ACTUAL})", f"${retiro_buffer_hoy:,}")
+with k3: 
+    if meta_lograda: st.success(f"🎯 Meta lograda en {año_meta}")
+    else: st.error("🎯 Meta No Alcanzada")
 
 if meta_lograda:
     if año_agotamiento:
-        st.warning(f"⚠️\n\n**Hito Alcanzado pero Insuficiente:** Se logró la meta de ${liquidez_deseada:,.0f} en **{año_meta}**, pero el capital se agota en el año **{año_agotamiento}**. Para cubrir el horizonte completo, necesitas subir el capital mínimo requerido.")
+        st.warning(f"⚠️\n\n**Meta Alcanzada pero Insuficiente:** Se logró llegar a los ${liquidez_deseada:,.0f} en **{año_meta}**, pero el capital se agota en el año **{año_agotamiento}**. Necesitas subir el monto de la meta para que sea sostenible.")
     else:
-        st.info(f"🚀\n\n**Libertad Financiera Lograda:** Meta alcanzada en {mes_nombre_meta} de {año_meta}. El capital es suficiente hasta el año **{año_final}** de forma sostenible.")
+        st.info(f"🚀\n\n**Libertad Financiera Lograda:** Meta de ahorro alcanzada en {mes_nombre_meta} de {año_meta}. El capital es suficiente hasta el año **{año_final}**.")
 else:
-    st.error("❌ Meta no alcanzada dentro del horizonte proyectado.")
+    st.error("❌ La meta de capital no se alcanza dentro del tiempo proyectado.")
