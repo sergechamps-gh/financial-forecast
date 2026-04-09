@@ -7,8 +7,8 @@ from datetime import datetime
 # 1. Configuración dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title="Serge Financial Strategy v4.10", layout="wide")
-st.title("🧬 Auditoría de Compra: Validación Matemática Absoluta")
+st.set_page_config(page_title="Serge Financial Strategy v4.20", layout="wide")
+st.title("🧬 Auditoría Patrimonial: Valor Real Final")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -54,8 +54,7 @@ meses_restantes_credito = 0
 meses_extra_trabajo_pendientes = años_extra_trabajo * 12
 gasto_buffer_ajustado = retiro_buffer_hoy
 
-# Variables Auditoría (Fijas al gatillar)
-f_costo_mercado = 0
+# Variables de Auditoría Final
 f_prima_pagada = 0
 f_monto_prestamo = 0
 f_total_intereses = 0
@@ -79,7 +78,6 @@ for mes in range(1, meses + 1):
         mes_nombre_meta = nombre_mes
         mes_de_la_compra = mes
         
-        f_costo_mercado = precio_aparta
         f_prima_pagada = prima_req
         f_monto_prestamo = precio_aparta - f_prima_pagada
         
@@ -91,7 +89,7 @@ for mes in range(1, meses + 1):
         capital_actual -= f_prima_pagada
         retiro_anual += f_prima_pagada
 
-    # Flujo mensual
+    # Flujo mensual (Resumido)
     if not meta_lograda:
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
@@ -138,7 +136,7 @@ for mes in range(1, meses + 1):
 
 df = pd.DataFrame(datos)
 
-# 4. Layout
+# 4. Layout Visual
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader("📑 Auditoría de Flujo")
@@ -155,22 +153,22 @@ with col_chart:
     fig.update_layout(template="plotly_dark", height=500, margin=dict(l=0, r=0, t=20, b=0))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. Resumen Financiero (AUDITORÍA MATEMÁTICA)
+# 5. Resumen Financiero Consolidado
 st.markdown("---")
 if meta_lograda:
-    # MATEMÁTICA PURA: Lo que realmente sale de tu bolsillo
-    total_pagado_al_banco = cuota_mensual * meses_totales_credito
-    costo_total_real = f_prima_pagada + total_pagado_al_banco
+    # MATEMÁTICA: Suma de flujos de salida
+    total_cuotas_banco = cuota_mensual * meses_totales_credito
+    valor_total_real = f_prima_pagada + total_cuotas_banco
     
     k1, k2, k3, k4, k5 = st.columns(5)
-    k1.metric("Valor Mercado (Gatillo)", f"${round(f_costo_mercado):,}")
+    # Reemplazamos Valor Mercado por Valor Total Final Inmueble
+    k1.metric("Valor Total Final Inmueble", f"${round(valor_total_real):,}")
     k2.metric("Monto Préstamo", f"${round(f_monto_prestamo):,}")
     k3.metric("Intereses Totales", f"${round(f_total_intereses):,}", delta="Costo Deuda", delta_color="inverse")
-    k4.metric("COSTO TOTAL REAL", f"${round(costo_total_real):,}")
+    k4.metric("Costo Total Real", f"${round(valor_total_real):,}")
     k5.metric("Prima (Cash)", f"${round(f_prima_pagada):,}")
 
     st.success(f"🚀 **Libertad Lograda:** Compra en **{mes_nombre_meta} {año_meta}**. Retiro en **{mes_nombre_libertad} {año_libertad}**.")
-    st.info(f"💡 El Costo Total Real (${round(costo_total_real):,}) es la suma de la Prima (${round(f_prima_pagada):,}) más todas las cuotas del banco (${round(total_pagado_al_banco):,}).")
     if año_agotamiento:
         st.error(f"⚠️ **Alerta:** El capital se agota en {año_agotamiento}.")
 else:
