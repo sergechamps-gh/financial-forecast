@@ -126,7 +126,7 @@ año_final = YEAR_ACTUAL + años_proyeccion
 
 if meta_lograda:
     if año_agotamiento:
-       st.warning(f"⚠️\n\n**Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}{contexto_plan} el capital se agota en el año **{año_agotamiento}**.")
+       st.warning(f"⚠️\n\n**Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}{contexto_plan} el capital se agota en el año **{año_agotamiento}**, ajusta el plan de contigencia.”)
     else:
         st.info(f"🚀\n\n**Libertad Financiera Lograda:** Meta alcanzada en {mes_nombre_meta} de {año_meta}. El capital es sostenible hasta el año **{año_final}**, ajusta plan de contigencia.”)
 else:
