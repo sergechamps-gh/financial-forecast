@@ -7,8 +7,8 @@ from datetime import datetime
 # 1. Configuración dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title="Serge Financial Strategy v3.60", layout="wide")
-st.title("🧬 Auditoría de Compra Híbrida y Plan de Contingencia")
+st.set_page_config(page_title="Serge Financial Strategy v3.70", layout="wide")
+st.title("🧬 Auditoría de Compra Híbrida: Transparencia Total")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -24,19 +24,19 @@ with st.sidebar:
     precio_hoy = st.number_input(f"Precio del aparta ({YEAR_ACTUAL}) ($)", value=200000, step=5000)
     inflacion_inmueble = st.number_input("Inflación Inmueble Anual (%)", value=4.0, step=0.5) / 100
     
-    pct_cash = st.slider("% Pago en Cash (Prima)", 20, 100, 50, step=5)
-    interes_banco = st.number_input("Tasa Interés Banco Anual (%)", value=8.5, step=0.25) / 100
+    pct_cash = st.slider("% Pago en Cash (Prima)", 20, 100, 40, step=5)
+    interes_banco = st.number_input("Tasa Interés Banco Anual (%)", value=12.0, step=0.25) / 100
     plazo_años = st.slider("Plazo del Crédito (Años)", 5, 30, 15)
     
     st.header("🛡️ Plan de Contingencia")
-    liquidez_minima = st.number_input("Liquidez mínima post-compra ($)", value=100000, step=10000)
+    liquidez_minima = st.number_input("Liquidez mínima post-compra ($)", value=200000, step=10000)
     años_extra_trabajo = st.slider("Años extra de trabajo post-compra", 0, 15, 0)
-    inversion_extra_mensual = st.number_input("Inversión mensual extra en esos años ($)", value=0, step=100)
+    inversion_extra_mensual = st.number_input("Inversión mensual extra en esos años ($)", value=500, step=100)
     
     st.header("💸 Gastos de Vida")
-    retiro_buffer_hoy = st.number_input(f"Gasto bianual (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
+    retiro_buffer_hoy = st.number_input(f"Gasto bianual (valor {YEAR_ACTUAL} $)", value=45000, step=5000)
     inflacion_gastos = st.number_input("Inflación de Gastos (%)", value=3.0, step=0.5) / 100
-    años_proyeccion = st.slider("Años de horizonte financiero", 10, 60, 48)
+    años_proyeccion = st.slider("Años de horizonte financiero", 10, 80, 60)
 
 # 3. Motor de Cálculo
 meses = años_proyeccion * 12
@@ -45,6 +45,8 @@ capital_actual = cap_inicial
 precio_aparta = precio_hoy
 meta_lograda = False
 año_meta = None; mes_nombre_meta = ""
+mes_de_la_compra = -1
+año_libertad = None; mes_nombre_libertad = ""
 año_agotamiento = None
 cuota_mensual = 0
 meses_restantes_credito = 0
@@ -59,6 +61,8 @@ monto_prestamo_final = 0
 
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
+    nombre_mes = MESES_NOMBRES[(mes % 12) - 1]
+    
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
@@ -68,7 +72,8 @@ for mes in range(1, meses + 1):
     if not meta_lograda and capital_actual >= (prima_requerida + liquidez_minima):
         meta_lograda = True
         año_meta = año_actual
-        mes_nombre_meta = MESES_NOMBRES[(mes % 12) - 1]
+        mes_nombre_meta = nombre_mes
+        mes_de_la_compra = mes
         costo_final_aparta = precio_aparta
         monto_prestamo_final = precio_aparta - prima_requerida
         
@@ -96,9 +101,14 @@ for mes in range(1, meses + 1):
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
             meses_extra_trabajo_pendientes -= 1
+            if meses_extra_trabajo_pendientes == 0:
+                año_libertad = año_actual
+                mes_nombre_libertad = nombre_mes
+        elif años_extra_trabajo == 0 and mes_de_la_compra == mes:
+             año_libertad = año_actual
+             mes_nombre_libertad = nombre_mes
         else:
-            # Solo retira buffer si terminó los años extra de trabajo
-            meses_desde_libertad = mes - (mes_de_la_compra if 'mes_de_la_compra' in locals() else mes) - (años_extra_trabajo * 12)
+            meses_desde_libertad = mes - mes_de_la_compra - (años_extra_trabajo * 12)
             if meses_desde_libertad > 0 and meses_desde_libertad % 24 == 0:
                 capital_actual -= gasto_buffer_ajustado
                 retiro_anual += gasto_buffer_ajustado
@@ -108,7 +118,6 @@ for mes in range(1, meses + 1):
         año_agotamiento = año_actual
 
     if mes % 12 == 0:
-        # Definir Status
         if not meta_lograda: status = "Acumulando 💼"
         elif meses_extra_trabajo_pendientes > 0: status = "Contingencia 🛡️"
         elif meses_restantes_credito > 0: status = "Pagando Crédito 🏠"
@@ -143,19 +152,19 @@ with col_chart:
     fig.update_layout(template="plotly_dark", height=500, margin=dict(l=0, r=0, t=20, b=0))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. Banners de Resumen
+# 5. Resumen Financiero
 st.markdown("---")
 if meta_lograda:
-    k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Costo Final Propiedad", f"${costo_final_aparta:,.0f}")
-    k2.metric("Monto Financiado", f"${monto_prestamo_final:,.0f}")
-    k3.metric("Intereses al Banco", f"${total_intereses_pagados:,.0f}", delta="Costo Deuda", delta_color="inverse")
-    k4.metric("Prima Pagada (Cash)", f"${costo_final_aparta * (pct_cash/100):,}")
+    k1, k2, k3, k4, k5 = st.columns(5)
+    k1.metric("Valor Inmueble (Inflado)", f"${round(costo_final_aparta):,}")
+    k2.metric("Monto Financiado", f"${round(monto_prestamo_final):,}")
+    k3.metric("Intereses Totales", f"${round(total_intereses_pagados):,}", delta="Costo Deuda", delta_color="inverse")
+    k4.metric("Costo Total Real", f"${round(costo_final_aparta + total_intereses_pagados):,}")
+    k5.metric("Prima Pagada (Cash)", f"${round(costo_final_aparta * (pct_cash/100)):,}")
 
     if año_agotamiento:
-        st.error(f"⚠️ **Alerta:** Compras en {año_meta}, pero el capital se agota en {año_agotamiento}. El plan de contingencia de {años_extra_trabajo} años no fue suficiente.")
+        st.error(f"⚠️ **Alerta:** Compra en {mes_nombre_meta} {año_meta}, pero el capital se agota en {año_agotamiento}.")
     else:
-        st.success(f"🚀 **Libertad Lograda:** Compra en {mes_nombre_meta} {año_meta}. Sostenible hasta el final de la proyección.")
+        st.success(f"🚀 **Libertad Lograda:** Compra realizada en **{mes_nombre_meta} {año_meta}**. Libertad financiera (retiro) iniciada en **{mes_nombre_libertad} {año_libertad}**. Sostenible hasta el final de la proyección.")
 else:
     st.error("❌ No se alcanza el capital para la prima con los parámetros actuales.")
-
