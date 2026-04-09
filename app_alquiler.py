@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. Configuración dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title="Serge Financial Strategy v1.88", layout="wide")
+st.set_page_config(page_title="Serge Financial Strategy v1.9", layout="wide")
 st.title("🏢 Dashboard de Libertad Financiera (Alquiler)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -49,7 +49,7 @@ meses_post_meta = 0
 datos.append({
     "Año": YEAR_ACTUAL, "Capital ($)": round(cap_inicial), 
     "Renta Mensual ($)": round(renta_hoy), "Inyectado ($)": 0, 
-    "Retiro Buffer ($)": 0, "Status": "Inicio 🚀"
+    "Retiro Buffer ($)": 0, "Buffer_Ref": round(retiro_buffer_hoy), "Status": "Inicio 🚀"
 })
 
 for mes in range(1, meses + 1):
@@ -67,10 +67,9 @@ for mes in range(1, meses + 1):
         inyectado_anual += ahorro_mensual
     else:
         meses_post_meta += 1
-        # La renta se paga SIEMPRE cada mes
-        capital_actual -= renta_actualizada
+        capital_actual -= renta_actualizada # Renta mensual (silenciosa)
         
-        # El BUFFER se retira solo cada 24 meses de libertad (Igual que en Compra)
+        # Retiro Buffer cada 24 meses de libertad
         if meses_post_meta % 24 == 1: 
             capital_actual -= gasto_buffer_ajustado
             retiro_bianual_log += gasto_buffer_ajustado
@@ -87,6 +86,7 @@ for mes in range(1, meses + 1):
             "Renta Mensual ($)": round(renta_actualizada),
             "Inyectado ($)": round(inyectado_anual),
             "Retiro Buffer ($)": round(retiro_bianual_log),
+            "Buffer_Ref": round(gasto_buffer_ajustado),
             "Status": "Libertad 🌴" if meta_lograda else "Acumulando 💼"
         })
         inyectado_anual = 0
@@ -99,7 +99,7 @@ col_table, col_chart = st.columns([1, 1])
 with col_table:
     st.subheader(f"📑 Auditoría de Flujo")
     st.dataframe(
-        df.style.format({
+        df.drop(columns=['Buffer_Ref']).style.format({
             "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
             "Renta Mensual ($)": "{:,.0f}", "Inyectado ($)": "{:,.0f}",
             "Retiro Buffer ($)": "{:,.0f}"
@@ -109,19 +109,34 @@ with col_table:
 with col_chart:
     st.subheader("📈 Evolución Financiera")
     fig = go.Figure()
+    # Capital (Verde)
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
+    # Renta Anualizada (Rojo)
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Renta Mensual ($)'] * 12, name="Renta Anual", line=dict(color='#ff4b4b', dash='dot')))
+    # Buffer de Referencia (Naranja)
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Buffer_Ref'], name="Costo Buffer 2Y", line=dict(color='orange', dash='dash')))
     
     fig.add_hline(y=0, line_dash="dash", line_color="white", opacity=0.3)
     fig.update_layout(template="plotly_dark", height=500, margin=dict(l=0, r=0, t=20, b=0), legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. Banners finales
+# 5. Banners de Sostenibilidad (Restaurados)
 st.markdown("---")
 año_final = YEAR_ACTUAL + años_proyeccion
+
+if meta_lograda:
+    if año_agotamiento:
+        st.warning(f"⚠️\n\n**Meta Alcanzada pero Insuficiente:** Se llegó a los ${liquidez_deseada:,.0f} en **{año_meta}**, pero el capital se agota en el año **{año_agotamiento}**. Necesitas ajustar el plan para cubrir el horizonte completo.")
+    else:
+        st.info(f"🚀\n\n**Libertad Financiera Lograda:** Meta alcanzada en {mes_nombre_meta} de {año_meta}. El capital es sostenible hasta el año **{año_final}**.")
+else:
+    st.error("❌ La meta de capital no se alcanza dentro del horizonte proyectado.")
+
+# 6. KPIs
+st.markdown("---")
 k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({año_final})", f"${df['Capital ($)'].iloc[-1]:,}")
-with k2: st.metric(f"Gasto Buffer 2Y (Hoy)", f"${retiro_buffer_hoy:,}")
+with k2: st.metric(f"Aporte Mensual", f"${ahorro_mensual:,}")
 with k3: 
     if meta_lograda: st.success(f"🎯 Meta lograda en {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
