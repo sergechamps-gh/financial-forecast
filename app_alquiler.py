@@ -7,8 +7,8 @@ from datetime import datetime
 # 1. Configuración dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title="Serge Financial Strategy v4.20", layout="wide")
-st.title("🧬 Auditoría Patrimonial: Valor Real Final")
+st.set_page_config(page_title="Serge Financial Strategy v4.30", layout="wide")
+st.title("🧬 Auditoría Patrimonial: Capital vs Gastos")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -54,7 +54,6 @@ meses_restantes_credito = 0
 meses_extra_trabajo_pendientes = años_extra_trabajo * 12
 gasto_buffer_ajustado = retiro_buffer_hoy
 
-# Variables de Auditoría Final
 f_prima_pagada = 0
 f_monto_prestamo = 0
 f_total_intereses = 0
@@ -68,6 +67,8 @@ for mes in range(1, meses + 1):
     
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
+    
+    # La inflación de gastos siempre corre
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
 
     # Gatillo de Compra
@@ -77,7 +78,6 @@ for mes in range(1, meses + 1):
         año_meta = año_actual
         mes_nombre_meta = nombre_mes
         mes_de_la_compra = mes
-        
         f_prima_pagada = prima_req
         f_monto_prestamo = precio_aparta - f_prima_pagada
         
@@ -89,7 +89,7 @@ for mes in range(1, meses + 1):
         capital_actual -= f_prima_pagada
         retiro_anual += f_prima_pagada
 
-    # Flujo mensual (Resumido)
+    # Flujo mensual
     if not meta_lograda:
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
@@ -127,6 +127,7 @@ for mes in range(1, meses + 1):
         datos.append({
             "Año": año_actual,
             "Capital ($)": round(capital_actual) if capital_actual > 0 else 0,
+            "Gasto Buffer ($)": round(gasto_buffer_ajustado),
             "Inyectado ($)": round(inyectado_anual),
             "Retiros ($)": round(retiro_anual),
             "Cuota Mensual ($)": round(cuota_mensual) if meses_restantes_credito > 0 or (meta_lograda and meses_restantes_credito >= meses_totales_credito - 12) else 0,
@@ -141,27 +142,29 @@ col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader("📑 Auditoría de Flujo")
     st.dataframe(df.style.format({
-        "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
+        "Año": "{:.0f}", "Capital ($)": "{:,.0f}", "Gasto Buffer ($)": "{:,.0f}",
         "Inyectado ($)": "{:,.0f}", "Retiros ($)": "{:,.0f}", "Cuota Mensual ($)": "{:,.0f}"
     }), height=500, use_container_width=True, hide_index=True)
 
 with col_chart:
-    st.subheader("📈 Trayectoria de Capital")
+    st.subheader("📈 Capital vs Costo de Vida")
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
-    fig.add_hline(y=0, line_dash="dash", line_color="red")
-    fig.update_layout(template="plotly_dark", height=500, margin=dict(l=0, r=0, t=20, b=0))
+    # Línea de Capital (Verde)
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital Disponible", line=dict(color='#00d1b2', width=3)))
+    # Línea de Gasto (Roja Punteada)
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto Buffer ($)'], name="Gasto de Vida (Inflado)", line=dict(color='#ff3860', width=2, dash='dash')))
+    
+    fig.add_hline(y=0, line_dash="solid", line_color="white", opacity=0.3)
+    fig.update_layout(template="plotly_dark", height=500, margin=dict(l=0, r=0, t=20, b=0), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
     st.plotly_chart(fig, use_container_width=True)
 
 # 5. Resumen Financiero Consolidado
 st.markdown("---")
 if meta_lograda:
-    # MATEMÁTICA: Suma de flujos de salida
     total_cuotas_banco = cuota_mensual * meses_totales_credito
     valor_total_real = f_prima_pagada + total_cuotas_banco
     
     k1, k2, k3, k4, k5 = st.columns(5)
-    # Reemplazamos Valor Mercado por Valor Total Final Inmueble
     k1.metric("Valor Total Final Inmueble", f"${round(valor_total_real):,}")
     k2.metric("Monto Préstamo", f"${round(f_monto_prestamo):,}")
     k3.metric("Intereses Totales", f"${round(f_total_intereses):,}", delta="Costo Deuda", delta_color="inverse")
@@ -170,6 +173,6 @@ if meta_lograda:
 
     st.success(f"🚀 **Libertad Lograda:** Compra en **{mes_nombre_meta} {año_meta}**. Retiro en **{mes_nombre_libertad} {año_libertad}**.")
     if año_agotamiento:
-        st.error(f"⚠️ **Alerta:** El capital se agota en {año_agotamiento}.")
+        st.error(f"⚠️ **Alerta de Supervivencia:** El capital se agota en {año_agotamiento}.")
 else:
     st.error("❌ No se alcanza el capital para la prima con los parámetros actuales.")
