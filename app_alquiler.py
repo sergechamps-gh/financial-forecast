@@ -7,8 +7,8 @@ from datetime import datetime
 # 1. Configuración dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title="Serge Financial Strategy v3.90", layout="wide")
-st.title("🧬 Auditoría de Compra: Validación de Flujo Total")
+st.set_page_config(page_title="Serge Financial Strategy v4.00", layout="wide")
+st.title("🧬 Auditoría de Compra: Validación Matemática Final")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -53,13 +53,15 @@ meses_totales_credito = plazo_años * 12
 meses_restantes_credito = 0
 meses_extra_trabajo_pendientes = años_extra_trabajo * 12
 gasto_buffer_ajustado = retiro_buffer_hoy
-costo_final_mercado = 0
-total_intereses_pagados = 0
-capital_post_compra = 0
+
+# Variables de Auditoría Final (Fijas tras la compra)
+f_costo_mercado = 0
+f_prima_pagada = 0
+f_monto_prestamo = 0
+f_total_intereses = 0
+
 inyectado_anual = 0
 retiro_anual = 0
-monto_prestamo_inicial = 0
-prima_pagada_final = 0
 
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
@@ -76,18 +78,19 @@ for mes in range(1, meses + 1):
         año_meta = año_actual
         mes_nombre_meta = nombre_mes
         mes_de_la_compra = mes
-        costo_final_mercado = precio_aparta
-        prima_pagada_final = precio_aparta * (pct_cash / 100)
-        monto_prestamo_inicial = precio_aparta - prima_pagada_final
         
-        if monto_prestamo_inicial > 0:
-            cuota_mensual = abs(npf.pmt(interes_banco/12, meses_totales_credito, monto_prestamo_inicial))
+        # FIJAMOS LOS VALORES EN EL MOMENTO DEL GATILLO
+        f_costo_mercado = precio_aparta
+        f_prima_pagada = prima_requerida
+        f_monto_prestamo = precio_aparta - f_prima_pagada
+        
+        if f_monto_prestamo > 0:
+            cuota_mensual = abs(npf.pmt(interes_banco/12, meses_totales_credito, f_monto_prestamo))
             meses_restantes_credito = meses_totales_credito
-            total_intereses_pagados = (cuota_mensual * meses_totales_credito) - monto_prestamo_inicial
+            f_total_intereses = (cuota_mensual * meses_totales_credito) - f_monto_prestamo
         
-        capital_actual -= prima_pagada_final
-        capital_post_compra = capital_actual
-        retiro_anual += prima_pagada_final
+        capital_actual -= f_prima_pagada
+        retiro_anual += f_prima_pagada
 
     # Flujo mensual
     if not meta_lograda:
@@ -112,7 +115,6 @@ for mes in range(1, meses + 1):
             meses_desde_libertad = mes - mes_de_la_compra - (años_extra_trabajo * 12)
             if meses_desde_libertad > 0 and meses_desde_libertad % 24 == 0:
                 capital_actual -= gasto_buffer_ajustado
-                # Aquí solo logueamos los retiros de vida, no la prima
                 retiro_anual += gasto_buffer_ajustado
 
     capital_actual += capital_actual * (rendimiento_anual / 12)
@@ -129,7 +131,7 @@ for mes in range(1, meses + 1):
             "Año": año_actual,
             "Capital ($)": round(capital_actual) if capital_actual > 0 else 0,
             "Inyectado ($)": round(inyectado_anual),
-            "Retiros ($)": round(retiro_anual), # Incluye prima en el año de compra
+            "Retiros ($)": round(retiro_anual),
             "Cuota Mensual ($)": round(cuota_mensual) if meses_restantes_credito > 0 or (meta_lograda and meses_restantes_credito >= meses_totales_credito - 12) else 0,
             "Status": status
         })
@@ -154,20 +156,18 @@ with col_chart:
     fig.update_layout(template="plotly_dark", height=500, margin=dict(l=0, r=0, t=20, b=0))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. Resumen Financiero (MATH FIX)
+# 5. Resumen Financiero (FINAL MATH VERIFICATION)
 st.markdown("---")
 if meta_lograda:
-    # DEFINICIÓN MATEMÁTICA FINAL
-    # Costo Total = Prima + (Cuota * Plazo Meses)
-    costo_total_credito = cuota_mensual * meses_totales_credito
-    costo_total_real = prima_pagada_final + costo_total_credito
+    # EL COSTO TOTAL REAL ES LA SUMA DE TODAS LAS SALIDAS DE EFECTIVO HACIA LA VIVIENDA
+    costo_total_real = f_prima_pagada + f_monto_prestamo + f_total_intereses
     
     k1, k2, k3, k4, k5 = st.columns(5)
-    k1.metric("Valor Mercado (Inflado)", f"${round(costo_final_mercado):,}")
-    k2.metric("Monto Préstamo", f"${round(monto_prestamo_inicial):,}")
-    k3.metric("Intereses al Banco", f"${round(total_intereses_pagados):,}", delta="Costo Deuda", delta_color="inverse")
+    k1.metric("Valor Mercado (Inflado)", f"${round(f_costo_mercado):,}")
+    k2.metric("Monto Préstamo", f"${round(f_monto_prestamo):,}")
+    k3.metric("Intereses al Banco", f"${round(f_total_intereses):,}", delta="Costo Deuda", delta_color="inverse")
     k4.metric("COSTO TOTAL REAL", f"${round(costo_total_real):,}")
-    k5.metric("Prima (Cash)", f"${round(prima_pagada_final):,}")
+    k5.metric("Prima (Cash)", f"${round(f_prima_pagada):,}")
 
     st.success(f"🚀 **Libertad Lograda:** Compra en **{mes_nombre_meta} {año_meta}**. Retiro en **{mes_nombre_libertad} {año_libertad}**.")
     if año_agotamiento:
