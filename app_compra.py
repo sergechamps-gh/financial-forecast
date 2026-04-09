@@ -163,6 +163,4 @@ m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Co
 # 6. SECCIÓN FINAL: AUDITORÍA DE RENDIMIENTO
 st.markdown("### 📊 Rendimiento Histórico Acumulado")
 c1, c2, c3 = st.columns(3)
-c1.metric("Total Ahorro Propio (Inyectado)", f"${round(total_ahorro_propio):,}")
-c2.metric("Total Intereses Generados", f"${round(total_intereses_generados):,}")
-c3.metric("Multiplicador de Capital", f"{round(total_intereses_generados / total_ahorro_propio, 2)}x")
+c1.metric("Total Ahorro Propio (Inyectado)", f"${round(total_ahorro_propio):,}", help="Suma de Capital Inicial + Aportes Mensuales + Inversión Extra") c2.metric("Total Intereses Generados", f"${round(total_intereses_generados):,}", help="Ganancia pura generada por el mercado sobre tu capital") c3.metric("Eficiencia (Multiplicador)", f"{round(total_intereses_generados/total_ahorro_propio, 2)}x", help="Cuántas veces el mercado generó tu ahorro")
