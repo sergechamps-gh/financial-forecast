@@ -7,8 +7,8 @@ from datetime import datetime
 # 1. Configuración dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title="Serge Financial Strategy v3.70", layout="wide")
-st.title("🧬 Auditoría de Compra Híbrida: Transparencia Total")
+st.set_page_config(page_title="Serge Financial Strategy v3.80", layout="wide")
+st.title("🧬 Auditoría de Compra: Costo Real Patrimonial")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -58,6 +58,7 @@ capital_post_compra = 0
 inyectado_anual = 0
 retiro_anual = 0
 monto_prestamo_final = 0
+prima_pagada_final = 0
 
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
@@ -75,6 +76,7 @@ for mes in range(1, meses + 1):
         mes_nombre_meta = nombre_mes
         mes_de_la_compra = mes
         costo_final_aparta = precio_aparta
+        prima_pagada_final = prima_requerida
         monto_prestamo_final = precio_aparta - prima_requerida
         
         if monto_prestamo_final > 0:
@@ -91,12 +93,10 @@ for mes in range(1, meses + 1):
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
     else:
-        # 1. Pago de cuota de banco
         if meses_restantes_credito > 0:
             capital_actual -= cuota_mensual
             meses_restantes_credito -= 1
         
-        # 2. Lógica de Contingencia vs Libertad
         if meses_extra_trabajo_pendientes > 0:
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
@@ -138,7 +138,7 @@ df = pd.DataFrame(datos)
 # 4. Layout
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
-    st.subheader("📑 Auditoría Transparente")
+    st.subheader("📑 Auditoría de Flujo")
     st.dataframe(df.style.format({
         "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
         "Inyectado ($)": "{:,.0f}", "Retiro/Prima ($)": "{:,.0f}", "Cuota Mensual ($)": "{:,.0f}"
@@ -152,19 +152,22 @@ with col_chart:
     fig.update_layout(template="plotly_dark", height=500, margin=dict(l=0, r=0, t=20, b=0))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. Resumen Financiero
+# 5. Resumen Financiero Corregido
 st.markdown("---")
 if meta_lograda:
+    # La matemática de Serge: Costo Total = Prima + Crédito + Intereses
+    costo_real_patrimonial = prima_pagada_final + monto_prestamo_final + total_intereses_pagados
+    
     k1, k2, k3, k4, k5 = st.columns(5)
     k1.metric("Valor Inmueble (Inflado)", f"${round(costo_final_aparta):,}")
     k2.metric("Monto Financiado", f"${round(monto_prestamo_final):,}")
     k3.metric("Intereses Totales", f"${round(total_intereses_pagados):,}", delta="Costo Deuda", delta_color="inverse")
-    k4.metric("Costo Total Real", f"${round(costo_final_aparta + total_intereses_pagados):,}")
-    k5.metric("Prima Pagada (Cash)", f"${round(costo_final_aparta * (pct_cash/100)):,}")
+    k4.metric("Costo Total Real", f"${round(costo_real_patrimonial):,}")
+    k5.metric("Prima Pagada (Cash)", f"${round(prima_pagada_final):,}")
 
     if año_agotamiento:
         st.error(f"⚠️ **Alerta:** Compra en {mes_nombre_meta} {año_meta}, pero el capital se agota en {año_agotamiento}.")
     else:
-        st.success(f"🚀 **Libertad Lograda:** Compra realizada en **{mes_nombre_meta} {año_meta}**. Libertad financiera (retiro) iniciada en **{mes_nombre_libertad} {año_libertad}**. Sostenible hasta el final de la proyección.")
+        st.success(f"🚀 **Libertad Lograda:** Compra realizada en **{mes_nombre_meta} {año_meta}**. Libertad financiera iniciada en **{mes_nombre_libertad} {año_libertad}**.")
 else:
     st.error("❌ No se alcanza el capital para la prima con los parámetros actuales.")
