@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. Configuración dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title="Serge Financial Strategy v1.87", layout="wide")
+st.set_page_config(page_title="Serge Financial Strategy v1.88", layout="wide")
 st.title("🏢 Dashboard de Libertad Financiera (Alquiler)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -42,13 +42,14 @@ año_agotamiento = None
 renta_actualizada = renta_hoy
 gasto_buffer_ajustado = retiro_buffer_hoy
 inyectado_anual = 0
-retiro_anual_acumulado = 0 
+retiro_bianual_log = 0 
+meses_post_meta = 0
 
 # Fila Génesis
 datos.append({
     "Año": YEAR_ACTUAL, "Capital ($)": round(cap_inicial), 
     "Renta Mensual ($)": round(renta_hoy), "Inyectado ($)": 0, 
-    "Retiro ($)": 0, "Status": "Inicio 🚀"
+    "Retiro Buffer ($)": 0, "Status": "Inicio 🚀"
 })
 
 for mes in range(1, meses + 1):
@@ -65,14 +66,14 @@ for mes in range(1, meses + 1):
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
     else:
-        # Gasto de renta mensual (siempre ocurre en libertad)
+        meses_post_meta += 1
+        # La renta se paga SIEMPRE cada mes
         capital_actual -= renta_actualizada
-        retiro_anual_acumulado += renta_actualizada
         
-        # Gasto del Buffer (Solo cada 24 meses)
-        if (mes % 24 == 0):
+        # El BUFFER se retira solo cada 24 meses de libertad (Igual que en Compra)
+        if meses_post_meta % 24 == 1: 
             capital_actual -= gasto_buffer_ajustado
-            retiro_anual_acumulado += gasto_buffer_ajustado
+            retiro_bianual_log += gasto_buffer_ajustado
     
     capital_actual += capital_actual * (rendimiento_anual / 12)
 
@@ -85,11 +86,11 @@ for mes in range(1, meses + 1):
             "Capital ($)": round(capital_actual),
             "Renta Mensual ($)": round(renta_actualizada),
             "Inyectado ($)": round(inyectado_anual),
-            "Retiro ($)": round(retiro_anual_acumulado),
+            "Retiro Buffer ($)": round(retiro_bianual_log),
             "Status": "Libertad 🌴" if meta_lograda else "Acumulando 💼"
         })
         inyectado_anual = 0
-        retiro_anual_acumulado = 0
+        retiro_bianual_log = 0
 
 df = pd.DataFrame(datos)
 
@@ -101,7 +102,7 @@ with col_table:
         df.style.format({
             "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
             "Renta Mensual ($)": "{:,.0f}", "Inyectado ($)": "{:,.0f}",
-            "Retiro ($)": "{:,.0f}"
+            "Retiro Buffer ($)": "{:,.0f}"
         }), height=500, use_container_width=True, hide_index=True
     )
 
@@ -110,19 +111,17 @@ with col_chart:
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Renta Mensual ($)'] * 12, name="Renta Anual", line=dict(color='#ff4b4b', dash='dot')))
-    # El buffer se mantiene en el gráfico para referencia visual de la meta
-    fig.add_trace(go.Scatter(x=df['Año'], y=df.apply(lambda x: retiro_buffer_hoy * (1.03**(x['Año']-YEAR_ACTUAL)), axis=1), name="Costo Buffer 2Y", line=dict(color='orange', dash='dash')))
     
     fig.add_hline(y=0, line_dash="dash", line_color="white", opacity=0.3)
     fig.update_layout(template="plotly_dark", height=500, margin=dict(l=0, r=0, t=20, b=0), legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. Banners y KPIs
+# 5. Banners finales
 st.markdown("---")
 año_final = YEAR_ACTUAL + años_proyeccion
 k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({año_final})", f"${df['Capital ($)'].iloc[-1]:,}")
-with k2: st.metric(f"Aporte Mensual", f"${ahorro_mensual:,}")
+with k2: st.metric(f"Gasto Buffer 2Y (Hoy)", f"${retiro_buffer_hoy:,}")
 with k3: 
     if meta_lograda: st.success(f"🎯 Meta lograda en {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
