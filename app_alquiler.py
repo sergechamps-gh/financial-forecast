@@ -6,7 +6,7 @@ from datetime import datetime
 # 1. Configuración dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title="Serge Financial Strategy v1.7", layout="wide")
+st.set_page_config(page_title="Serge Financial Strategy v1.8", layout="wide")
 st.title("🏢 Dashboard de Libertad Financiera (Alquiler)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -41,6 +41,7 @@ año_meta = None ; mes_nombre_meta = ""
 año_agotamiento = None
 renta_actualizada = renta_hoy
 gasto_buffer_ajustado = retiro_buffer_hoy
+renta_anual_acumulada = 0
 
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
@@ -56,6 +57,7 @@ for mes in range(1, meses + 1):
         capital_actual += ahorro_mensual
     else:
         capital_actual -= renta_actualizada
+        renta_anual_acumulada += renta_actualizada
         if (mes % 24 == 0):
             capital_actual -= gasto_buffer_ajustado
     
@@ -67,25 +69,34 @@ for mes in range(1, meses + 1):
     if mes % 12 == 0:
         datos.append({
             "Año": año_actual,
-            "Capital ($)": round(capital_actual), # VISIBILIDAD DE NEGATIVOS
-            "Renta Mensual": round(renta_actualizada),
+            "Capital ($)": round(capital_actual),
+            "Renta Anual ($)": round(renta_actualizada * 12),
+            "Buffer 2Y ($)": round(gasto_buffer_ajustado),
             "Status": "Libertad 🌴" if meta_lograda else "Acumulando 💼"
         })
+        renta_anual_acumulada = 0
 
 df = pd.DataFrame(datos)
 
 # 4. Layout
-col_table, col_chart = st.columns([1, 1])
+col_table, col_chart = st.columns([0.8, 1.2])
 with col_table:
     st.subheader(f"📑 Proyección a {años_proyeccion} Años")
-    st.dataframe(df.style.format({"Año": "{:.0f}", "Capital ($)": "{:,.0f}"}), use_container_width=True, hide_index=True)
+    st.dataframe(df.drop(columns=['Renta Anual ($)', 'Buffer 2Y ($)']).style.format({"Año": "{:.0f}", "Capital ($)": "{:,.0f}"}), 
+                 use_container_width=True, hide_index=True, height=450)
 
 with col_chart:
-    st.subheader("📈 Evolución del Capital")
+    st.subheader("📈 Evolución Financiera")
     fig = go.Figure()
+    # Capital en Verde Esmeralda
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
-    fig.add_hline(y=0, line_dash="dash", line_color="red")
-    fig.update_layout(template="plotly_dark")
+    # Renta Anual en Rojo
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Renta Anual ($)'], name="Costo Renta (Anual)", line=dict(color='#ff4b4b', dash='dot')))
+    # Buffer en Naranja
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Buffer 2Y ($)'], name="Buffer (2 años)", line=dict(color='orange', dash='dash')))
+    
+    fig.add_hline(y=0, line_dash="dash", line_color="white", opacity=0.3)
+    fig.update_layout(template="plotly_dark", height=450, margin=dict(l=0, r=0, t=20, b=0), legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
 # 5. Banners de Sostenibilidad
@@ -100,8 +111,6 @@ with k3:
 
 if meta_lograda:
     if año_agotamiento:
-        st.warning(f"⚠️\n\n**Meta Alcanzada pero Insuficiente:** Se logró llegar a los ${liquidez_deseada:,.0f} en **{año_meta}**, pero el capital se agota en el año **{año_agotamiento}**. Necesitas subir el monto de la meta para que sea sostenible.")
+        st.warning(f"⚠️\n\n**Meta Alcanzada pero Insuficiente:** Se logró llegar a los ${liquidez_deseada:,.0f} en **{año_meta}**, pero el capital se agota en el año **{año_agotamiento}**. Revisa el gráfico para ver el cruce de las líneas de gasto.")
     else:
         st.info(f"🚀\n\n**Libertad Financiera Lograda:** Meta de ahorro alcanzada en {mes_nombre_meta} de {año_meta}. El capital es suficiente hasta el año **{año_final}**.")
-else:
-    st.error("❌ La meta de capital no se alcanza dentro del tiempo proyectado.")
