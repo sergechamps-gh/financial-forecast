@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v3.55", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v3.60", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera (Compra)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -51,6 +51,7 @@ año_agotamiento = None
 costo_final_aparta = 0
 capital_post_meta = 0
 
+# Contadores de rendimiento
 total_ahorro_propio = cap_inicial
 total_intereses_generados = 0
 
@@ -58,14 +59,18 @@ inyectado_anual = 0
 retiro_anual = 0
 
 for mes in range(1, meses + 1):
+    año_actual = YEAR_ACTUAL + (mes // 12)
+    nombre_mes_actual = MESES_NOMBRES[(mes % 12) - 1]
+    
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
+    
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
 
     if not meta_lograda and capital_actual >= (precio_aparta + liquidez_deseada):
         meta_lograda = True
-        año_meta = YEAR_ACTUAL + (mes // 12)
-        mes_nombre_meta = MESES_NOMBRES[(mes % 12) - 1]
+        año_meta = año_actual
+        mes_nombre_meta = nombre_mes_actual
         mes_de_la_compra = mes
         costo_final_aparta = precio_aparta
         capital_actual -= precio_aparta
@@ -79,6 +84,7 @@ for mes in range(1, meses + 1):
     else:
         meses_desde_compra = mes - mes_de_la_compra
         es_periodo_extra = meses_desde_compra <= (años_extra_trabajo * 12)
+        
         if es_periodo_extra:
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
@@ -89,17 +95,18 @@ for mes in range(1, meses + 1):
                 capital_actual -= gasto_buffer_ajustado
                 retiro_anual += gasto_buffer_ajustado
     
-    ganancia_mes = capital_actual * (rendimiento_anual / 12)
-    total_intereses_generados += ganancia_mes
-    capital_actual += ganancia_mes
+    # Cálculo de intereses
+    interes_mes = capital_actual * (rendimiento_anual / 12)
+    total_intereses_generados += interes_mes
+    capital_actual += interes_mes
 
     if capital_actual <= 0 and año_agotamiento is None:
-        año_agotamiento = YEAR_ACTUAL + (mes // 12)
+        año_agotamiento = año_actual
 
     if mes % 12 == 0:
         es_retiro = meta_lograda and (mes - mes_de_la_compra > (años_extra_trabajo * 12))
         datos.append({
-            "Año": YEAR_ACTUAL + (mes // 12),
+            "Año": año_actual,
             "Capital ($)": round(capital_actual) if capital_actual > 0 else 0,
             "Precio Apt": "COMPRADO" if meta_lograda else f"{round(precio_aparta):,}",
             "Inyectado ($)": round(inyectado_anual),
@@ -111,39 +118,51 @@ for mes in range(1, meses + 1):
 
 df = pd.DataFrame(datos)
 
-# 4. Layout
+# 4. Layout Principal
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"📑 Proyección a {años_proyeccion} Años")
-    st.dataframe(df.drop(columns=['Gasto_2Y']).style.format({
-        "Año": "{:.0f}", "Capital ($)": "{:,.0f}", "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"
-    }), height=400, use_container_width=True, hide_index=True)
+    st.dataframe(
+        df.drop(columns=['Gasto_2Y']).style.format({
+            "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
+            "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"
+        }), 
+        height=400, use_container_width=True, hide_index=True
+    )
 
 with col_chart:
     st.subheader("📈 Capital vs Gasto")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_2Y'], name="Gasto (2Y)", line=dict(color='orange', dash='dot')))
-    fig.update_layout(height=400, template="plotly_dark", legend=dict(orientation="h", y=1.1))
+    fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
 # 5. KPIs y Banners
 st.markdown("---")
+año_final_proy = YEAR_ACTUAL + años_proyeccion
+k1, k2, k3 = st.columns(3)
+with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
+with k2: st.metric(f"Monto del buffer a 2 Años (Hoy)", f"${retiro_buffer_hoy:,}")
+with k3: 
+    if meta_lograda: st.success(f"🎯 Compra realizada en {mes_nombre_meta} {año_meta}")
+    else: st.error("🎯 Meta No Alcanzada")
+
 if meta_lograda:
     año_libertad = año_meta + años_extra_trabajo
     if año_agotamiento:
         st.warning(f"⚠️ **Alerta de Sistema:** Despues de la compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia.")
     else:
-        st.info(f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro en {mes_nombre_meta} de **{año_libertad}**. Sostenible hasta el año **{YEAR_ACTUAL + años_proyeccion}**.")
-
-# 6. MÉTRICAS FINALES DE ACUMULACIÓN
-st.markdown("### 📊 Rendimiento Histórico Acumulado")
-c1, c2, c3 = st.columns(3)
-c1.metric("Total Ahorro Propio (Inyectado)", f"${round(total_ahorro_propio):,}", help="Suma de Capital Inicial + Aportes Mensuales + Inversión Extra")
-c2.metric("Total Intereses Generados", f"${round(total_intereses_generados):,}", help="Ganancia pura generada por el mercado sobre tu capital")
-c3.metric("Eficiencia (Multiplicador)", f"{round(total_intereses_generados/total_ahorro_propio, 2)}x", help="Cuántas veces el mercado generó tu ahorro")
+        st.info(f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro en {mes_nombre_meta} de **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**.")
 
 st.markdown("---")
 m1, m2 = st.columns(2)
 m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
 m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
+
+# 6. SECCIÓN FINAL: AUDITORÍA DE RENDIMIENTO
+st.markdown("### 📊 Rendimiento Histórico Acumulado")
+c1, c2, c3 = st.columns(3)
+c1.metric("Total Ahorro Propio (Inyectado)", f"${round(total_ahorro_propio):,}")
+c2.metric("Total Intereses Generados", f"${round(total_intereses_generados):,}")
+c3.metric("Multiplicador de Capital", f"{round(total_intereses_generados / total_ahorro_propio, 2)}x")
