@@ -7,8 +7,8 @@ from datetime import datetime
 # 1. Configuración dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title="Serge Financial Strategy v4.00", layout="wide")
-st.title("🧬 Auditoría de Compra: Validación Matemática Final")
+st.set_page_config(page_title="Serge Financial Strategy v4.10", layout="wide")
+st.title("🧬 Auditoría de Compra: Validación Matemática Absoluta")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -54,7 +54,7 @@ meses_restantes_credito = 0
 meses_extra_trabajo_pendientes = años_extra_trabajo * 12
 gasto_buffer_ajustado = retiro_buffer_hoy
 
-# Variables de Auditoría Final (Fijas tras la compra)
+# Variables Auditoría (Fijas al gatillar)
 f_costo_mercado = 0
 f_prima_pagada = 0
 f_monto_prestamo = 0
@@ -72,16 +72,15 @@ for mes in range(1, meses + 1):
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
 
     # Gatillo de Compra
-    prima_requerida = precio_aparta * (pct_cash / 100)
-    if not meta_lograda and capital_actual >= (prima_requerida + liquidez_minima):
+    prima_req = precio_aparta * (pct_cash / 100)
+    if not meta_lograda and capital_actual >= (prima_req + liquidez_minima):
         meta_lograda = True
         año_meta = año_actual
         mes_nombre_meta = nombre_mes
         mes_de_la_compra = mes
         
-        # FIJAMOS LOS VALORES EN EL MOMENTO DEL GATILLO
         f_costo_mercado = precio_aparta
-        f_prima_pagada = prima_requerida
+        f_prima_pagada = prima_req
         f_monto_prestamo = precio_aparta - f_prima_pagada
         
         if f_monto_prestamo > 0:
@@ -156,20 +155,22 @@ with col_chart:
     fig.update_layout(template="plotly_dark", height=500, margin=dict(l=0, r=0, t=20, b=0))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. Resumen Financiero (FINAL MATH VERIFICATION)
+# 5. Resumen Financiero (AUDITORÍA MATEMÁTICA)
 st.markdown("---")
 if meta_lograda:
-    # EL COSTO TOTAL REAL ES LA SUMA DE TODAS LAS SALIDAS DE EFECTIVO HACIA LA VIVIENDA
-    costo_total_real = f_prima_pagada + f_monto_prestamo + f_total_intereses
+    # MATEMÁTICA PURA: Lo que realmente sale de tu bolsillo
+    total_pagado_al_banco = cuota_mensual * meses_totales_credito
+    costo_total_real = f_prima_pagada + total_pagado_al_banco
     
     k1, k2, k3, k4, k5 = st.columns(5)
-    k1.metric("Valor Mercado (Inflado)", f"${round(f_costo_mercado):,}")
+    k1.metric("Valor Mercado (Gatillo)", f"${round(f_costo_mercado):,}")
     k2.metric("Monto Préstamo", f"${round(f_monto_prestamo):,}")
-    k3.metric("Intereses al Banco", f"${round(f_total_intereses):,}", delta="Costo Deuda", delta_color="inverse")
+    k3.metric("Intereses Totales", f"${round(f_total_intereses):,}", delta="Costo Deuda", delta_color="inverse")
     k4.metric("COSTO TOTAL REAL", f"${round(costo_total_real):,}")
     k5.metric("Prima (Cash)", f"${round(f_prima_pagada):,}")
 
     st.success(f"🚀 **Libertad Lograda:** Compra en **{mes_nombre_meta} {año_meta}**. Retiro en **{mes_nombre_libertad} {año_libertad}**.")
+    st.info(f"💡 El Costo Total Real (${round(costo_total_real):,}) es la suma de la Prima (${round(f_prima_pagada):,}) más todas las cuotas del banco (${round(total_pagado_al_banco):,}).")
     if año_agotamiento:
         st.error(f"⚠️ **Alerta:** El capital se agota en {año_agotamiento}.")
 else:
