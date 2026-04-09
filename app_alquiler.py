@@ -86,7 +86,7 @@ for mes in range(1, meses + 1):
             capital_actual -= cuota_mensual
             meses_restantes_credito -= 1
         
-        meses_desde_compra = mes - (año_meta - YEAR_ACTUAL)*12 # Aproximación mes de compra
+        meses_desde_compra = mes - ((año_meta - YEAR_ACTUAL) * 12)
         if meses_desde_compra > 0 and meses_desde_compra % 24 == 0:
             capital_actual -= gasto_buffer_ajustado
             retiro_anual += gasto_buffer_ajustado
@@ -133,7 +133,7 @@ año_final = YEAR_ACTUAL + años_proyeccion
 
 if meta_lograda:
     if año_agotamiento:
-        st.warning(f"⚠️ **Alerta:** Compra lograda en {año_meta}, pero el capital se agota en {año_agotamiento}. Considera subir el % de cash o bajar gastos.")
+        st.warning(f"⚠️ **Alerta:** Compra lograda en {año_meta}, pero el capital se agota en {año_agotamiento}.")
     else:
         st.info(f"🚀 **Libertad Lograda:** Compra en {mes_nombre_meta} {año_meta}. Sostenible hasta el {año_final}.")
 else:
