@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v3.65", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v3.70", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera (Compra)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -158,7 +158,8 @@ m1, m2 = st.columns(2)
 m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
 m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
 
-# 6. SECCIÓN FINAL: AUDITORÍA DE RENDIMIENTO (Con Help Tooltips)
+# 6. SECCIÓN FINAL: AUDITORÍA DE RENDIMIENTO (Con línea divisora y Help)
+st.markdown("---")
 st.markdown("### 📊 Rendimiento Histórico Acumulado")
 c1, c2, c3 = st.columns(3)
 c1.metric("Total Ahorro Propio (Inyectado)", 
