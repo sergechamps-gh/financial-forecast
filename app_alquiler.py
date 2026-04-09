@@ -128,7 +128,7 @@ if meta_lograda:
     if año_agotamiento:
        st.warning(f"⚠️\n\n**Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}{contexto_plan} el capital se agota en el año **{año_agotamiento}**.")
     else:
-        st.info(f"🚀\n\n**Libertad Financiera Lograda:** Meta alcanzada en {mes_nombre_meta} de {año_meta}. El capital es sostenible hasta el año **{año_final}**.")
+        st.info(f"🚀\n\n**Libertad Financiera Lograda:** Meta alcanzada en {mes_nombre_meta} de {año_meta}. El capital es sostenible hasta el año **{año_final}**, ajusta plan de contigencia.”)
 else:
     st.error("❌ La meta de capital no se alcanza dentro del horizonte proyectado.")
 
