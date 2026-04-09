@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v3.50", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v3.51", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera (Compra)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -63,21 +63,16 @@ for mes in range(1, meses + 1):
     
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
 
-    # Gatillo de Compra
     if not meta_lograda and capital_actual >= (precio_aparta + liquidez_deseada):
         meta_lograda = True
         año_meta = año_actual
         mes_nombre_meta = nombre_mes_actual
         mes_de_la_compra = mes
         costo_final_aparta = precio_aparta
-        
-        # Al comprar, restamos solo el apartamento. 
-        # Si NO hay años extra, el gasto bianual se quita de inmediato.
         capital_actual -= precio_aparta
         capital_post_meta = capital_actual
         retiro_anual += precio_aparta
 
-    # Flujo Post-Gatillo
     if not meta_lograda:
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
@@ -89,7 +84,6 @@ for mes in range(1, meses + 1):
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
         else:
-            # Una vez terminados los años extra, inician los retiros cada 24 meses
             meses_post_trabajo = meses_desde_compra - (años_extra_trabajo * 12)
             if meses_post_trabajo == 1 or (meses_post_trabajo > 1 and meses_post_trabajo % 24 == 0):
                 capital_actual -= gasto_buffer_ajustado
@@ -148,9 +142,9 @@ with k3:
 if meta_lograda:
     año_libertad = año_meta + años_extra_trabajo
     if año_agotamiento:
-        st.warning(f"⚠️ **Alerta de Sistema:** Compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**.")
+        # BANNER AMARILLO ACTUALIZADO
+        st.warning(f"⚠️ **Alerta de Sistema:** Despues de la compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia.")
     else:
-        # BANNER AZUL DINÁMICO
         st.info(f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro en {mes_nombre_meta} de **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**.")
 
     st.markdown("---")
