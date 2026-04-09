@@ -7,8 +7,8 @@ from datetime import datetime
 # 1. Configuración dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title="Serge Financial Strategy v3.80", layout="wide")
-st.title("🧬 Auditoría de Compra: Costo Real Patrimonial")
+st.set_page_config(page_title="Serge Financial Strategy v3.90", layout="wide")
+st.title("🧬 Auditoría de Compra: Validación de Flujo Total")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -49,15 +49,16 @@ mes_de_la_compra = -1
 año_libertad = None; mes_nombre_libertad = ""
 año_agotamiento = None
 cuota_mensual = 0
+meses_totales_credito = plazo_años * 12
 meses_restantes_credito = 0
 meses_extra_trabajo_pendientes = años_extra_trabajo * 12
 gasto_buffer_ajustado = retiro_buffer_hoy
-costo_final_aparta = 0
+costo_final_mercado = 0
 total_intereses_pagados = 0
 capital_post_compra = 0
 inyectado_anual = 0
 retiro_anual = 0
-monto_prestamo_final = 0
+monto_prestamo_inicial = 0
 prima_pagada_final = 0
 
 for mes in range(1, meses + 1):
@@ -75,18 +76,18 @@ for mes in range(1, meses + 1):
         año_meta = año_actual
         mes_nombre_meta = nombre_mes
         mes_de_la_compra = mes
-        costo_final_aparta = precio_aparta
-        prima_pagada_final = prima_requerida
-        monto_prestamo_final = precio_aparta - prima_requerida
+        costo_final_mercado = precio_aparta
+        prima_pagada_final = precio_aparta * (pct_cash / 100)
+        monto_prestamo_inicial = precio_aparta - prima_pagada_final
         
-        if monto_prestamo_final > 0:
-            cuota_mensual = abs(npf.pmt(interes_banco/12, plazo_años*12, monto_prestamo_final))
-            meses_restantes_credito = plazo_años * 12
-            total_intereses_pagados = (cuota_mensual * meses_restantes_credito) - monto_prestamo_final
+        if monto_prestamo_inicial > 0:
+            cuota_mensual = abs(npf.pmt(interes_banco/12, meses_totales_credito, monto_prestamo_inicial))
+            meses_restantes_credito = meses_totales_credito
+            total_intereses_pagados = (cuota_mensual * meses_totales_credito) - monto_prestamo_inicial
         
-        capital_actual -= prima_requerida
+        capital_actual -= prima_pagada_final
         capital_post_compra = capital_actual
-        retiro_anual += prima_requerida
+        retiro_anual += prima_pagada_final
 
     # Flujo mensual
     if not meta_lograda:
@@ -111,6 +112,7 @@ for mes in range(1, meses + 1):
             meses_desde_libertad = mes - mes_de_la_compra - (años_extra_trabajo * 12)
             if meses_desde_libertad > 0 and meses_desde_libertad % 24 == 0:
                 capital_actual -= gasto_buffer_ajustado
+                # Aquí solo logueamos los retiros de vida, no la prima
                 retiro_anual += gasto_buffer_ajustado
 
     capital_actual += capital_actual * (rendimiento_anual / 12)
@@ -127,8 +129,8 @@ for mes in range(1, meses + 1):
             "Año": año_actual,
             "Capital ($)": round(capital_actual) if capital_actual > 0 else 0,
             "Inyectado ($)": round(inyectado_anual),
-            "Retiro/Prima ($)": round(retiro_anual),
-            "Cuota Mensual ($)": round(cuota_mensual) if meses_restantes_credito > 0 or (meta_lograda and meses_restantes_credito == plazo_años*12) else 0,
+            "Retiros ($)": round(retiro_anual), # Incluye prima en el año de compra
+            "Cuota Mensual ($)": round(cuota_mensual) if meses_restantes_credito > 0 or (meta_lograda and meses_restantes_credito >= meses_totales_credito - 12) else 0,
             "Status": status
         })
         inyectado_anual = 0 ; retiro_anual = 0
@@ -141,7 +143,7 @@ with col_table:
     st.subheader("📑 Auditoría de Flujo")
     st.dataframe(df.style.format({
         "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
-        "Inyectado ($)": "{:,.0f}", "Retiro/Prima ($)": "{:,.0f}", "Cuota Mensual ($)": "{:,.0f}"
+        "Inyectado ($)": "{:,.0f}", "Retiros ($)": "{:,.0f}", "Cuota Mensual ($)": "{:,.0f}"
     }), height=500, use_container_width=True, hide_index=True)
 
 with col_chart:
@@ -152,22 +154,23 @@ with col_chart:
     fig.update_layout(template="plotly_dark", height=500, margin=dict(l=0, r=0, t=20, b=0))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. Resumen Financiero Corregido
+# 5. Resumen Financiero (MATH FIX)
 st.markdown("---")
 if meta_lograda:
-    # La matemática de Serge: Costo Total = Prima + Crédito + Intereses
-    costo_real_patrimonial = prima_pagada_final + monto_prestamo_final + total_intereses_pagados
+    # DEFINICIÓN MATEMÁTICA FINAL
+    # Costo Total = Prima + (Cuota * Plazo Meses)
+    costo_total_credito = cuota_mensual * meses_totales_credito
+    costo_total_real = prima_pagada_final + costo_total_credito
     
     k1, k2, k3, k4, k5 = st.columns(5)
-    k1.metric("Valor Inmueble (Inflado)", f"${round(costo_final_aparta):,}")
-    k2.metric("Monto Financiado", f"${round(monto_prestamo_final):,}")
-    k3.metric("Intereses Totales", f"${round(total_intereses_pagados):,}", delta="Costo Deuda", delta_color="inverse")
-    k4.metric("Costo Total Real", f"${round(costo_real_patrimonial):,}")
-    k5.metric("Prima Pagada (Cash)", f"${round(prima_pagada_final):,}")
+    k1.metric("Valor Mercado (Inflado)", f"${round(costo_final_mercado):,}")
+    k2.metric("Monto Préstamo", f"${round(monto_prestamo_inicial):,}")
+    k3.metric("Intereses al Banco", f"${round(total_intereses_pagados):,}", delta="Costo Deuda", delta_color="inverse")
+    k4.metric("COSTO TOTAL REAL", f"${round(costo_total_real):,}")
+    k5.metric("Prima (Cash)", f"${round(prima_pagada_final):,}")
 
+    st.success(f"🚀 **Libertad Lograda:** Compra en **{mes_nombre_meta} {año_meta}**. Retiro en **{mes_nombre_libertad} {año_libertad}**.")
     if año_agotamiento:
-        st.error(f"⚠️ **Alerta:** Compra en {mes_nombre_meta} {año_meta}, pero el capital se agota en {año_agotamiento}.")
-    else:
-        st.success(f"🚀 **Libertad Lograda:** Compra realizada en **{mes_nombre_meta} {año_meta}**. Libertad financiera iniciada en **{mes_nombre_libertad} {año_libertad}**.")
+        st.error(f"⚠️ **Alerta:** El capital se agota en {año_agotamiento}.")
 else:
     st.error("❌ No se alcanza el capital para la prima con los parámetros actuales.")
