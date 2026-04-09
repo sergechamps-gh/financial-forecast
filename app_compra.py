@@ -61,8 +61,7 @@ datos.append({
 
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
-    # Corrección de índice de mes para el nombre
-    nombre_mes_actual = MESES_NOMBRES[(mes % 12) - 1]
+    nombre_mes_actual = MESES_NOMBRES[mes % 12]
     
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
@@ -110,7 +109,7 @@ for mes in range(1, meses + 1):
         es_retiro = meta_lograda and (mes - mes_de_la_compra > periodo_gracia)
         datos.append({
             "Año": año_actual,
-            "Capital ($)": round(capital_actual),
+            "Capital ($)": round(capital_actual), # VISIBILIDAD DE NEGATIVOS
             "Precio Apt": "COMPRADO" if meta_lograda else f"{round(precio_aparta):,}",
             "Inyectado ($)": round(inyectado_anual),
             "Retiro ($)": round(retiro_anual),
@@ -146,6 +145,23 @@ k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
 with k2: st.metric(f"Monto del buffer a 2 Años (Hoy {YEAR_ACTUAL})", f"${retiro_buffer_hoy:,}")
 with k3: 
-    if meta_lograda: st.success(f"🎯 Meta: {mes_nombre_meta} {año_meta}")
+    if meta_lograda: st.success(f"🎯 Meta lograda en {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
+if meta_lograda:
+    usa_plan = años_extra_trabajo > 0 and inversion_extra_mensual > 0
+    año_libertad = año_meta + (años_extra_trabajo if usa_plan else 0)
+    
+    if año_agotamiento:
+        contexto_plan = f" y haber trabajado {años_extra_trabajo} años más," if usa_plan else ","
+        st.warning(f"⚠️\n\n**Meta Alcanzada pero Insuficiente:** Después de la compra en {mes_nombre_meta} {año_meta}{contexto_plan} el capital se agota en el año **{año_agotamiento}**. Necesitas subir el monto de la meta para que sea sostenible.")
+    else:
+        inicio_texto = f"Apartamento comprado en {mes_nombre_meta} de {año_meta}"
+        if usa_plan: inicio_texto += f" y retiro iniciado en {mes_nombre_meta} de **{año_libertad}**"
+        else: inicio_texto += " y retiro iniciado inmediatamente"
+        st.info(f"🚀\n\n**Libertad Financiera Lograda:** {inicio_texto}. El capital es suficiente hasta el año **{año_final_proy}**.")
+
+st.markdown("---")
+m1, m2 = st.columns(2)
+m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
+m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
