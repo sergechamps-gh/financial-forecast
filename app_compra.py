@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.4", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.4.5", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera (Compra)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -59,9 +59,7 @@ capital_post_meta = 0
 total_ahorro_propio = cap_inicial
 total_intereses_generados = 0
 
-inyectado_anual = 0
-retiro_anual = 0
-condo_anual_acumulado = 0
+inyectado_anual = 0; retiro_anual = 0; condo_anual_acumulado = 0
 
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
@@ -133,8 +131,6 @@ df = pd.DataFrame(datos)
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"📑 Proyección a {años_proyeccion} Años")
-    
-    # DINÁMICA: Ocultar columnas si todos sus valores son 0
     cols_a_mostrar = ['Año', 'Capital ($)', 'Precio Apt', 'Inyectado ($)', 'Retiro ($)', 'Status']
     if df['Condo ($)'].sum() > 0:
         cols_a_mostrar.insert(5, 'Condo ($)')
@@ -143,8 +139,7 @@ with col_table:
         df[cols_a_mostrar].style.format({
             "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
             "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}", "Condo ($)": "{:,.0f}"
-        }), 
-        height=400, use_container_width=True, hide_index=True
+        }), height=400, use_container_width=True, hide_index=True
     )
 
 with col_chart:
@@ -156,7 +151,7 @@ with col_chart:
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. KPIs y Banners
+# 5. BANNER CHECK (RESTAURADOS v4.4)
 st.markdown("---")
 año_final_proy = YEAR_ACTUAL + años_proyeccion
 k1, k2, k3 = st.columns(3)
@@ -169,17 +164,30 @@ with k3:
 if meta_lograda:
     año_libertad = año_meta + años_extra_trabajo
     if año_agotamiento:
-        msg_warn = f"⚠️ **Alerta de Sistema:** El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
-        st.warning(msg_warn)
+        if años_extra_trabajo > 0:
+            if inversion_extra_mensual > 0:
+                msg = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**."
+            else:
+                msg = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, posponiendo el retiro {años_extra_trabajo} año(s). El capital se agota en **{año_agotamiento}**."
+        else:
+            msg = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}. El capital se agota en **{año_agotamiento}**."
+        st.warning(msg)
     else:
-        st.info(f"🚀 **Libertad Financiera Lograda:** Sostenible hasta el año **{año_final_proy}**.")
+        if años_extra_trabajo > 0:
+            if inversion_extra_mensual > 0:
+                msg = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro en **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
+            else:
+                msg = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se **pospone el retiro por {años_extra_trabajo} año(s)**, iniciando en **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
+        else:
+            msg = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Iniciando el retiro de inmediato. Sostenible hasta el año **{año_final_proy}**."
+        st.info(msg)
 
 st.markdown("---")
 m1, m2 = st.columns(2)
 m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
 m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
 
-# 6. Auditoría de Rendimiento
+# 6. Auditoría
 st.markdown("---")
 st.markdown("### 📊 Rendimiento Histórico Acumulado")
 c1, c2, c3 = st.columns(3)
