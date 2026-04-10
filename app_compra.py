@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.3", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.4", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera (Compra)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -88,7 +88,7 @@ for mes in range(1, meses + 1):
         inyectado_anual += ahorro_mensual
         total_ahorro_propio += ahorro_mensual
     else:
-        # Pagar cuota condominal
+        # Pagar cuota condominal (Mensual)
         capital_actual -= cuota_condo_ajustada
         condo_anual_acumulado += cuota_condo_ajustada
         retiro_anual += cuota_condo_ajustada
@@ -123,6 +123,7 @@ for mes in range(1, meses + 1):
             "Retiro ($)": round(retiro_anual),
             "Condo ($)": round(condo_anual_acumulado) if meta_lograda else 0,
             "Condo_Mes_Graf": round(cuota_condo_ajustada),
+            "Gasto_Vida_Graf": round(gasto_buffer_ajustado),
             "Status": "Retiro 🌴" if es_retiro else "Activo 💼"
         })
         inyectado_anual = 0; retiro_anual = 0; condo_anual_acumulado = 0
@@ -134,7 +135,7 @@ col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"📑 Proyección a {años_proyeccion} Años")
     st.dataframe(
-        df.drop(columns=['Condo_Mes_Graf']).style.format({
+        df.drop(columns=['Condo_Mes_Graf', 'Gasto_Vida_Graf']).style.format({
             "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
             "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}", "Condo ($)": "{:,.0f}"
         }), 
@@ -142,10 +143,14 @@ with col_table:
     )
 
 with col_chart:
-    st.subheader("📈 Capital vs Gastos")
+    st.subheader("📈 Capital vs Gastos (Anualizados)")
     fig = go.Figure()
+    # Capital (Eje principal)
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
+    # Gastos (Para comparar escala)
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Condo_Mes_Graf'] * 12, name="Condo (Anual)", line=dict(color='yellow', dash='dot')))
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_Vida_Graf'], name="Buffer Vida (2Y)", line=dict(color='orange', dash='dot')))
+    
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
