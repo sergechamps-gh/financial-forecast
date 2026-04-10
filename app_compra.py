@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.4.2", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.4.3", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera (Compra)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -41,7 +41,7 @@ with st.sidebar:
     años_extra_trabajo = st.slider("Años extra de trabajo post-compra", 0, 15, 1)
     inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=0, step=100)
 
-# 3. Motor de Cálculo (Sincronizado)
+# 3. Motor de Cálculo (Precisión de Post-Mortem)
 meses = años_proyeccion * 12
 datos = []
 capital_actual = cap_inicial
@@ -59,34 +59,34 @@ total_intereses_generados = 0
 inyectado_anual = 0; retiro_anual = 0; condo_anual_acumulado = 0
 
 for mes in range(1, meses + 1):
-    # Determinamos el año de la simulación (0, 1, 2...)
+    # Definimos el año de simulación (0 para el primer año, 1 para el segundo...)
     año_progreso = (mes - 1) // 12
     año_actual = YEAR_ACTUAL + año_progreso
-    nombre_mes_actual = MESES_NOMBRES[(mes % 12) - 1]
     
-    # CÁLCULO DE INFLACIÓN (Una sola vez por mes, basado en potencia anual)
+    # LA MATEMÁTICA CORRECTA: Potencia anual (Interés compuesto anual, no mensual)
     precio_aparta_iter = precio_hoy * ((1 + inflacion_inmueble) ** año_progreso)
     cuota_condo_iter = cuota_condo_hoy * ((1 + inflacion_condo) ** año_progreso)
     gasto_buffer_iter = retiro_buffer_hoy * ((1 + inflacion_gastos) ** año_progreso)
 
-    # Lógica de compra
+    # Verificación de Compra
     if not meta_lograda and capital_actual >= (precio_aparta_iter + liquidez_deseada):
         meta_lograda = True
         año_meta = año_actual
-        mes_nombre_meta = nombre_mes_actual
+        mes_nombre_meta = MESES_NOMBRES[(mes % 12) - 1]
         mes_de_la_compra = mes
         costo_final_aparta = precio_aparta_iter
         capital_actual -= precio_aparta_iter
         capital_post_meta = capital_actual
+        # El retiro de este año incluye el precio del aparta
         retiro_anual += precio_aparta_iter
 
-    # Flujos de efectivo
+    # Flujos Mensuales
     if not meta_lograda:
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
         total_ahorro_propio += ahorro_mensual
     else:
-        # Pagar cuota condominal (Mensual)
+        # Gasto de condominio real mensual inflado correctamente
         capital_actual -= cuota_condo_iter
         condo_anual_acumulado += cuota_condo_iter
         retiro_anual += cuota_condo_iter
@@ -98,12 +98,11 @@ for mes in range(1, meses + 1):
             total_ahorro_propio += inversion_extra_mensual
         else:
             meses_post_trabajo = meses_desde_compra - (años_extra_trabajo * 12)
-            # Retiro bianual del buffer de vida
             if meses_post_trabajo == 1 or (meses_post_trabajo > 1 and meses_post_trabajo % 24 == 0):
                 capital_actual -= gasto_buffer_iter
                 retiro_anual += gasto_buffer_iter
     
-    # Intereses
+    # Rendimiento Mercado
     interes_mes = capital_actual * (rendimiento_anual / 12)
     total_intereses_generados += interes_mes
     capital_actual += interes_mes
@@ -111,7 +110,7 @@ for mes in range(1, meses + 1):
     if capital_actual <= 0 and año_agotamiento is None:
         año_agotamiento = año_actual
 
-    # Corte Anual para la tabla
+    # Corte para la tabla (cada Diciembre)
     if mes % 12 == 0:
         es_retiro = meta_lograda and (mes - mes_de_la_compra > (años_extra_trabajo * 12))
         datos.append({
@@ -129,7 +128,7 @@ for mes in range(1, meses + 1):
 
 df = pd.DataFrame(datos)
 
-# 4. Layout Principal (Mantenido v4.4)
+# 4. UI y Layout (Mantenido v4.4)
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"📑 Proyección a {años_proyeccion} Años")
@@ -149,7 +148,7 @@ with col_chart:
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. KPIs y Banners (Mantenido v4.4)
+# 5. KPIs Finales
 st.markdown("---")
 año_final_proy = YEAR_ACTUAL + años_proyeccion
 k1, k2, k3 = st.columns(3)
@@ -159,20 +158,12 @@ with k3:
     if meta_lograda: st.success(f"🎯 Compra realizada en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
-if meta_lograda:
-    año_libertad = año_meta + años_extra_trabajo
-    if año_agotamiento:
-        msg_warn = f"⚠️ **Alerta de Sistema:** El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
-        st.warning(msg_warn)
-    else:
-        st.info(f"🚀 **Libertad Financiera Lograda:** Sostenible hasta el año **{año_final_proy}**.")
-
 st.markdown("---")
 m1, m2 = st.columns(2)
 m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
 m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
 
-# 6. Auditoría de Rendimiento (Mantenido v4.4)
+# 6. Auditoría de Rendimiento
 st.markdown("---")
 st.markdown("### 📊 Rendimiento Histórico Acumulado")
 c1, c2, c3 = st.columns(3)
