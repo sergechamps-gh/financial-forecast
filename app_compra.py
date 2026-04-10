@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.2.1", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.3", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera (Compra)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -38,8 +38,8 @@ with st.sidebar:
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
 
     st.header("🛡️ Plan de Contingencia")
-    años_extra_trabajo = st.slider("Años extra de trabajo post-compra", 0, 15, 8)
-    inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=500, step=100)
+    años_extra_trabajo = st.slider("Años extra de trabajo post-compra", 0, 15, 1)
+    inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=0, step=100)
 
 # 3. Motor de Cálculo
 meses = años_proyeccion * 12
@@ -61,6 +61,7 @@ total_intereses_generados = 0
 
 inyectado_anual = 0
 retiro_anual = 0
+condo_anual_acumulado = 0
 
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
@@ -87,7 +88,9 @@ for mes in range(1, meses + 1):
         inyectado_anual += ahorro_mensual
         total_ahorro_propio += ahorro_mensual
     else:
+        # Pagar cuota condominal
         capital_actual -= cuota_condo_ajustada
+        condo_anual_acumulado += cuota_condo_ajustada
         retiro_anual += cuota_condo_ajustada
 
         meses_desde_compra = mes - mes_de_la_compra
@@ -118,10 +121,11 @@ for mes in range(1, meses + 1):
             "Precio Apt": "COMPRADO" if meta_lograda else f"{round(precio_aparta):,}",
             "Inyectado ($)": round(inyectado_anual),
             "Retiro ($)": round(retiro_anual),
-            "Condo/Mes": round(cuota_condo_ajustada),
+            "Condo ($)": round(condo_anual_acumulado) if meta_lograda else 0,
+            "Condo_Mes_Graf": round(cuota_condo_ajustada),
             "Status": "Retiro 🌴" if es_retiro else "Activo 💼"
         })
-        inyectado_anual = 0; retiro_anual = 0
+        inyectado_anual = 0; retiro_anual = 0; condo_anual_acumulado = 0
 
 df = pd.DataFrame(datos)
 
@@ -130,18 +134,18 @@ col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"📑 Proyección a {años_proyeccion} Años")
     st.dataframe(
-        df.drop(columns=['Condo/Mes']).style.format({
+        df.drop(columns=['Condo_Mes_Graf']).style.format({
             "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
-            "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"
+            "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}", "Condo ($)": "{:,.0f}"
         }), 
         height=400, use_container_width=True, hide_index=True
     )
 
 with col_chart:
-    st.subheader("📈 Capital vs Gastos Recurrentes")
+    st.subheader("📈 Capital vs Gastos")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
-    fig.add_trace(go.Scatter(x=df['Año'], y=df['Condo/Mes'] * 12, name="Condo Anual", line=dict(color='#ff4b4b', dash='dot')))
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Condo_Mes_Graf'] * 12, name="Condo (Anual)", line=dict(color='yellow', dash='dot')))
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
