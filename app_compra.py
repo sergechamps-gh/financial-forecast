@@ -149,16 +149,7 @@ with k3:
 if meta_lograda:
     año_libertad = año_meta + años_extra_trabajo
     
-    if año_agotamiento:
-        # Alerta amarilla refinada
-        if años_extra_trabajo > 0:
-            if inversion_extra_mensual > 0:
-                msg_warn = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**."
-            else:
-                msg_warn = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, posponiendo el retiro {años_extra_trabajo} años. El capital se agota en **{año_agotamiento}**."
-        else:
-            msg_warn = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}. El capital se agota en **{año_agotamiento}**."
-        st.warning(msg_warn)
+   # Lógica de Banner Amarillo (Alerta) if año_agotamiento: if años_extra_trabajo > 0: msg_warn = f"⚠️ **Alerta de Sistema:** Despues de la compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia." else: msg_warn = f"⚠️ **Alerta de Sistema:** Despues de la compra en {mes_nombre_meta} {año_meta}. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia." st.warning(msg_warn)
     
     else:
         # Banner azul con la nueva lógica estratégica
