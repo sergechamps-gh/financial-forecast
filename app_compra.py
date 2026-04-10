@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.4.9", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.5.0", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera (Compra)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -59,11 +59,12 @@ capital_post_meta = 0
 total_ahorro_propio = cap_inicial
 total_intereses_generados = 0
 
-inyectado_anual = 0; retiro_anual = 0; condo_anual_acumulado = 0
+inyectado_anual = 0
+retiro_buffer_anual = 0 # Solo para el buffer/compra
+condo_anual_acumulado = 0
 
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
-    nombre_mes_actual = MESES_NOMBRES[(mes % 12) - 1]
     
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
@@ -71,24 +72,25 @@ for mes in range(1, meses + 1):
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
     cuota_condo_ajustada *= (1 + (inflacion_condo / 12))
 
+    # Lógica de Compra
     if not meta_lograda and capital_actual >= (precio_aparta + liquidez_deseada):
         meta_lograda = True
         año_meta = año_actual
-        mes_nombre_meta = nombre_mes_actual
+        mes_nombre_meta = MESES_NOMBRES[(mes % 12) - 1]
         mes_de_la_compra = mes
         costo_final_aparta = precio_aparta
         capital_actual -= precio_aparta
         capital_post_meta = capital_actual
-        retiro_anual += precio_aparta
+        retiro_buffer_anual += precio_aparta # La compra cuenta como retiro
 
     if not meta_lograda:
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
         total_ahorro_propio += ahorro_mensual
     else:
+        # Gastos post-compra
         capital_actual -= cuota_condo_ajustada
         condo_anual_acumulado += cuota_condo_ajustada
-        retiro_anual += cuota_condo_ajustada
 
         meses_desde_compra = mes - mes_de_la_compra
         es_periodo_extra = meses_desde_compra <= (años_extra_trabajo * 12)
@@ -99,9 +101,10 @@ for mes in range(1, meses + 1):
             total_ahorro_propio += inversion_extra_mensual
         else:
             meses_post_trabajo = meses_desde_compra - (años_extra_trabajo * 12)
+            # Retiro Bianual estricto
             if meses_post_trabajo == 1 or (meses_post_trabajo > 1 and meses_post_trabajo % 24 == 0):
                 capital_actual -= gasto_buffer_ajustado
-                retiro_anual += gasto_buffer_ajustado
+                retiro_buffer_anual += gasto_buffer_ajustado
     
     interes_mes = capital_actual * (rendimiento_anual / 12)
     total_intereses_generados += interes_mes
@@ -111,19 +114,19 @@ for mes in range(1, meses + 1):
         año_agotamiento = año_actual
 
     if mes % 12 == 0:
-        es_retiro = meta_lograda and (mes - mes_de_la_compra > (años_extra_trabajo * 12))
+        es_retiro_status = meta_lograda and (mes - mes_de_la_compra > (años_extra_trabajo * 12))
         datos.append({
             "Año": año_actual,
             "Capital ($)": round(capital_actual) if capital_actual > 0 else 0,
             "Precio Apt": "COMPRADO" if meta_lograda else f"{round(precio_aparta):,}",
             "Inyectado ($)": round(inyectado_anual),
-            "Retiro ($)": round(retiro_anual),
+            "Retiro ($)": round(retiro_buffer_anual), # YA NO incluye condo
             "Condo ($)": round(condo_anual_acumulado),
             "Condo_Mes_Graf": round(cuota_condo_ajustada),
             "Gasto_Vida_Graf": round(gasto_buffer_ajustado),
-            "Status": "Retiro 🌴" if es_retiro else "Activo 💼"
+            "Status": "Retiro 🌴" if es_retiro_status else "Activo 💼"
         })
-        inyectado_anual = 0; retiro_anual = 0; condo_anual_acumulado = 0
+        inyectado_anual = 0; retiro_buffer_anual = 0; condo_anual_acumulado = 0
 
 df = pd.DataFrame(datos)
 
@@ -160,7 +163,7 @@ with col_chart:
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. KPIs y Banners (RESTAURADA LÓGICA v4.4 COMPLETA)
+# 5. KPIs y Banners (v4.4 Logic)
 st.markdown("---")
 año_final_proy = YEAR_ACTUAL + años_proyeccion
 k1, k2, k3 = st.columns(3)
@@ -173,17 +176,15 @@ with k3:
 if meta_lograda:
     año_libertad = año_meta + años_extra_trabajo
     if año_agotamiento:
-        # BANNER AMARILLO v4.4 RESTAURADO
         if años_extra_trabajo > 0:
             if inversion_extra_mensual > 0:
-                msg_warn = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+                msg = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
             else:
-                msg_warn = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, posponiendo el retiro {años_extra_trabajo} año(s). El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+                msg = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, posponiendo el retiro {años_extra_trabajo} año(s). El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
         else:
-            msg_warn = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
-        st.warning(msg_warn)
+            msg = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+        st.warning(msg)
     else:
-        # BANNER AZUL v4.4 RESTAURADO
         if años_extra_trabajo > 0:
             if inversion_extra_mensual > 0:
                 msg_info = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro en {mes_nombre_meta} de **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
