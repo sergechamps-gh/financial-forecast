@@ -1,5 +1,5 @@
 import streamlit as st
-import pandas as pd
+import pd as pd
 import plotly.graph_objects as go
 import numpy_financial as npf
 from datetime import datetime
@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.1", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.2", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera (Compra)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -24,11 +24,15 @@ with st.sidebar:
     precio_hoy = st.number_input(f"Precio del aparta (en {YEAR_ACTUAL}) ($)", value=200000, step=5000)
     inflacion_inmueble = st.number_input("Inflación Inmueble (%)", value=4.0, step=0.5) / 100
     
+    st.subheader("🏢 Gastos de Condominio")
+    cuota_condo_hoy = st.number_input(f"Cuota mensual actual ($)", value=250, step=50)
+    inflacion_condo = st.number_input("Incremento anual cuota (%)", value=5.0, step=0.5) / 100
+
     st.header("🎯 Meta de Retiro")
     liquidez_deseada = st.number_input("Liquidez deseada despues de la compra ($)", value=300000, step=10000)
     
     st.header("💸 Fase de Desembolso")
-    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual para vivir de inversiones (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
+    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual para vivir (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
     inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5) / 100
     
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
@@ -47,6 +51,7 @@ año_meta = None
 mes_nombre_meta = ""
 mes_de_la_compra = -1
 gasto_buffer_ajustado = retiro_buffer_hoy 
+cuota_condo_ajustada = cuota_condo_hoy
 año_agotamiento = None
 costo_final_aparta = 0
 capital_post_meta = 0
@@ -64,8 +69,11 @@ for mes in range(1, meses + 1):
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
     
+    # Ajuste de inflaciones mensuales
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
+    cuota_condo_ajustada *= (1 + (inflacion_condo / 12))
 
+    # Lógica de compra
     if not meta_lograda and capital_actual >= (precio_aparta + liquidez_deseada):
         meta_lograda = True
         año_meta = año_actual
@@ -81,6 +89,10 @@ for mes in range(1, meses + 1):
         inyectado_anual += ahorro_mensual
         total_ahorro_propio += ahorro_mensual
     else:
+        # PAGAR CONDOMINIO (Siempre después de la compra)
+        capital_actual -= cuota_condo_ajustada
+        retiro_anual += cuota_condo_ajustada
+
         meses_desde_compra = mes - mes_de_la_compra
         es_periodo_extra = meses_desde_compra <= (años_extra_trabajo * 12)
         
@@ -89,11 +101,13 @@ for mes in range(1, meses + 1):
             inyectado_anual += inversion_extra_mensual
             total_ahorro_propio += inversion_extra_mensual
         else:
+            # Retiro del Buffer cada 2 años
             meses_post_trabajo = meses_desde_compra - (años_extra_trabajo * 12)
             if meses_post_trabajo == 1 or (meses_post_trabajo > 1 and meses_post_trabajo % 24 == 0):
                 capital_actual -= gasto_buffer_ajustado
                 retiro_anual += gasto_buffer_ajustado
     
+    # Intereses
     interes_mes = capital_actual * (rendimiento_anual / 12)
     total_intereses_generados += interes_mes
     capital_actual += interes_mes
@@ -109,7 +123,7 @@ for mes in range(1, meses + 1):
             "Precio Apt": "COMPRADO" if meta_lograda else f"{round(precio_aparta):,}",
             "Inyectado ($)": round(inyectado_anual),
             "Retiro ($)": round(retiro_anual),
-            "Gasto_2Y": round(gasto_buffer_ajustado),
+            "Condo/Mes": round(cuota_condo_ajustada),
             "Status": "Retiro 🌴" if es_retiro else "Activo 💼"
         })
         inyectado_anual = 0; retiro_anual = 0
@@ -121,7 +135,7 @@ col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"📑 Proyección a {años_proyeccion} Años")
     st.dataframe(
-        df.drop(columns=['Gasto_2Y']).style.format({
+        df.drop(columns=['Condo/Mes']).style.format({
             "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
             "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"
         }), 
@@ -129,10 +143,10 @@ with col_table:
     )
 
 with col_chart:
-    st.subheader("📈 Capital vs Gasto")
+    st.subheader("📈 Capital vs Gastos Recurrentes")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
-    fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_2Y'], name="Gasto (2Y)", line=dict(color='orange', dash='dot')))
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Condo/Mes'] * 12, name="Condo Anual", line=dict(color='#ff4b4b', dash='dot')))
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
@@ -148,7 +162,6 @@ with k3:
 
 if meta_lograda:
     año_libertad = año_meta + años_extra_trabajo
-    
     if año_agotamiento:
         if años_extra_trabajo > 0:
             if inversion_extra_mensual > 0:
@@ -158,7 +171,6 @@ if meta_lograda:
         else:
             msg_warn = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
         st.warning(msg_warn)
-    
     else:
         if años_extra_trabajo > 0:
             if inversion_extra_mensual > 0:
