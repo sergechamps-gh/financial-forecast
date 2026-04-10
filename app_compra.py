@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.4.7", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.4.8", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera (Compra)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -132,19 +132,20 @@ col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"📑 Proyección a {años_proyeccion} Años")
     
-    # Lógica de Visibilidad Inteligente
     libertad_financiera = meta_lograda and año_agotamiento is None
     
-    cols_a_mostrar = ['Año', 'Capital ($)', 'Status', 'Retiro ($)']
+    # NUEVO ORDEN DE COLUMNAS SOLICITADO
+    cols_a_mostrar = ['Año', 'Capital ($)']
     
-    # Solo mostramos Precio e Inyectado si NO hay libertad financiera (o si aún no se compra)
     if not libertad_financiera:
-        cols_a_mostrar.insert(2, 'Precio Apt')
-        cols_a_mostrar.insert(3, 'Inyectado ($)')
+        cols_a_mostrar.append('Precio Apt')
+        cols_a_mostrar.append('Inyectado ($)')
     
-    # Condo solo si ya se empezó a pagar
     if df['Condo ($)'].sum() > 0:
         cols_a_mostrar.append('Condo ($)')
+        
+    cols_a_mostrar.append('Retiro ($)') # Penúltima
+    cols_a_mostrar.append('Status')     # Última
     
     st.dataframe(
         df[cols_a_mostrar].style.format({
@@ -175,14 +176,12 @@ with k3:
 if meta_lograda:
     año_libertad = año_meta + años_extra_trabajo
     if año_agotamiento:
-        # Lógica de Warning
         if años_extra_trabajo > 0:
             msg = f"⚠️ **Alerta:** El capital se agota en **{año_agotamiento}** (con años extra trabajados)."
         else:
             msg = f"⚠️ **Alerta:** El capital se agota en **{año_agotamiento}**."
         st.warning(msg)
     else:
-        # Lógica de Info (Libertad Lograda)
         if años_extra_trabajo > 0:
             if inversion_extra_mensual > 0:
                 msg_info = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro en {mes_nombre_meta} de **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
