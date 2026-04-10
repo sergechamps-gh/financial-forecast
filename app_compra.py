@@ -1,5 +1,5 @@
 import streamlit as st
-import pd as pd
+import pandas as pd
 import plotly.graph_objects as go
 import numpy_financial as npf
 from datetime import datetime
@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.2", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.2.1", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera (Compra)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -69,11 +69,9 @@ for mes in range(1, meses + 1):
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
     
-    # Ajuste de inflaciones mensuales
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
     cuota_condo_ajustada *= (1 + (inflacion_condo / 12))
 
-    # Lógica de compra
     if not meta_lograda and capital_actual >= (precio_aparta + liquidez_deseada):
         meta_lograda = True
         año_meta = año_actual
@@ -89,7 +87,6 @@ for mes in range(1, meses + 1):
         inyectado_anual += ahorro_mensual
         total_ahorro_propio += ahorro_mensual
     else:
-        # PAGAR CONDOMINIO (Siempre después de la compra)
         capital_actual -= cuota_condo_ajustada
         retiro_anual += cuota_condo_ajustada
 
@@ -101,13 +98,11 @@ for mes in range(1, meses + 1):
             inyectado_anual += inversion_extra_mensual
             total_ahorro_propio += inversion_extra_mensual
         else:
-            # Retiro del Buffer cada 2 años
             meses_post_trabajo = meses_desde_compra - (años_extra_trabajo * 12)
             if meses_post_trabajo == 1 or (meses_post_trabajo > 1 and meses_post_trabajo % 24 == 0):
                 capital_actual -= gasto_buffer_ajustado
                 retiro_anual += gasto_buffer_ajustado
     
-    # Intereses
     interes_mes = capital_actual * (rendimiento_anual / 12)
     total_intereses_generados += interes_mes
     capital_actual += interes_mes
