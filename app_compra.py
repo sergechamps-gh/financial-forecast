@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.4.8", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.4.9", layout="wide")
 st.title("🧬 Dashboard de Libertad Financiera (Compra)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -131,10 +131,7 @@ df = pd.DataFrame(datos)
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"📑 Proyección a {años_proyeccion} Años")
-    
     libertad_financiera = meta_lograda and año_agotamiento is None
-    
-    # NUEVO ORDEN DE COLUMNAS SOLICITADO
     cols_a_mostrar = ['Año', 'Capital ($)']
     
     if not libertad_financiera:
@@ -144,8 +141,8 @@ with col_table:
     if df['Condo ($)'].sum() > 0:
         cols_a_mostrar.append('Condo ($)')
         
-    cols_a_mostrar.append('Retiro ($)') # Penúltima
-    cols_a_mostrar.append('Status')     # Última
+    cols_a_mostrar.append('Retiro ($)')
+    cols_a_mostrar.append('Status')
     
     st.dataframe(
         df[cols_a_mostrar].style.format({
@@ -163,7 +160,7 @@ with col_chart:
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. KPIs y Banners
+# 5. KPIs y Banners (RESTAURADA LÓGICA v4.4 COMPLETA)
 st.markdown("---")
 año_final_proy = YEAR_ACTUAL + años_proyeccion
 k1, k2, k3 = st.columns(3)
@@ -176,12 +173,17 @@ with k3:
 if meta_lograda:
     año_libertad = año_meta + años_extra_trabajo
     if año_agotamiento:
+        # BANNER AMARILLO v4.4 RESTAURADO
         if años_extra_trabajo > 0:
-            msg = f"⚠️ **Alerta:** El capital se agota en **{año_agotamiento}** (con años extra trabajados)."
+            if inversion_extra_mensual > 0:
+                msg_warn = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+            else:
+                msg_warn = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, posponiendo el retiro {años_extra_trabajo} año(s). El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
         else:
-            msg = f"⚠️ **Alerta:** El capital se agota en **{año_agotamiento}**."
-        st.warning(msg)
+            msg_warn = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+        st.warning(msg_warn)
     else:
+        # BANNER AZUL v4.4 RESTAURADO
         if años_extra_trabajo > 0:
             if inversion_extra_mensual > 0:
                 msg_info = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro en {mes_nombre_meta} de **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
