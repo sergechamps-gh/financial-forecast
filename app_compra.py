@@ -8,7 +8,7 @@ from datetime import datetime
 YEAR_ACTUAL = datetime.now().year
 
 st.set_page_config(page_title=f"Serge Financial Strategy v4.5.6", layout="wide")
-st.title("🧬 Dashboard: Independencia y Libertad Financiera")
+st.title("🧬 Dashboard: Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
