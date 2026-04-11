@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.6.2", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.6.3", layout="wide")
 st.title("Dashboard: Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -177,13 +177,25 @@ with k3:
     if meta_lograda: st.success(f"🎯 Aparta comprado en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
+# Banners Descriptivos v4.5 Style
 if meta_lograda:
     if año_agotamiento:
-        msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, el capital se agota en **{año_agotamiento}**. Ajusta años extra o inversión mensual."
+        if años_extra_trabajo > 0:
+            if inversion_extra_mensual > 0:
+                msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+            else:
+                msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, posponiendo el retiro {años_extra_trabajo} año(s). El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+        else:
+            msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
         st.warning(msg_w)
     else:
-        # AQUÍ ESTÁ EL CAMBIO: Año de sostenibilidad explícito
-        msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} {año_meta}. Retiro oficial inicia en **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
+        if años_extra_trabajo > 0:
+            if inversion_extra_mensual > 0:
+                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro en {mes_nombre_meta} de **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
+            else:
+                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se **pospone el retiro del buffer por {años_extra_trabajo} año(s)** para permitir crecimiento compuesto, iniciando el retiro en {mes_nombre_meta} de **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
+        else:
+            msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Iniciando el retiro en **{mes_nombre_meta} de {año_meta}**. Sostenible hasta el año **{año_final_proy}**."
         st.info(msg_i)
 
 st.markdown("---")
