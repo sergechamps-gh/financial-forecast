@@ -7,42 +7,43 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.7.2", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.7.3", layout="wide")
 
-# --- CALCULADORA INVISIBLE (POPOVER) ---
+# --- SECCIÓN: FORECAST MENSUAL & CALCULADORA ---
 with st.sidebar:
-    st.title("Serge Strategy")
-    with st.popover("🧮 Forecast Mensual"):
-        st.subheader("Conversor y Presupuesto")
+    st.title("Forecast Mensual")
+    with st.popover("🧮 Calculadora"):
         tasa_cambio = st.number_input("Tipo de cambio (CRC por USD)", value=515.0, step=1.0)
         
-        # Selector de moneda global para la calculadora
-        moneda_calc = st.radio("Moneda de trabajo:", ["USD", "CRC"], horizontal=True)
+        # Selector de moneda base
+        moneda_calc = st.radio("Moneda base:", ["USD", "CRC"], horizontal=True)
         
-        # Definir incrementos y símbolos dinámicos
+        # Lógica de incrementos y símbolos
         step_val = 5.0 if moneda_calc == "USD" else 1000.0
         simbolo = "$" if moneda_calc == "USD" else "₡"
         
         st.divider()
-        st.write(f"📊 **Sumadora de Gastos ({moneda_calc})**")
+        st.write(f"📊 **Gastos en {moneda_calc}**")
         
         g_diario = st.number_input(f"Diario/Comida ({simbolo})", value=0.0, step=step_val)
         g_servicios = st.number_input(f"Servicios ({simbolo})", value=0.0, step=step_val)
         g_diversion = st.number_input(f"Diversión ({simbolo})", value=0.0, step=step_val)
         
-        total_gastos = g_diario + g_servicios + g_diversion
-        total_anual = total_gastos * 12
+        total_m = g_diario + g_servicios + g_diversion
+        total_a = total_m * 12
         
         if moneda_calc == "CRC":
-            equiv_usd = total_gastos / tasa_cambio
-            st.metric("Total Mensual", f"₡{total_gastos:,.0f}")
-            st.write(f"🔹 Equivale a: **${equiv_usd:,.2f} USD**")
-            st.write(f"🗓️ Total Anual: **₡{total_anual:,.0f}**")
+            m_usd = total_m / tasa_cambio
+            a_usd = total_a / tasa_cambio
+            st.metric("Total Mensual", f"₡{total_m:,.0f}")
+            st.caption(f"Equivale a: ${m_usd:,.2f} USD")
+            st.caption(f"Total Anual: ₡{total_a:,.0f} / ${a_usd:,.2f} USD")
         else:
-            equiv_crc = total_gastos * tasa_cambio
-            st.metric("Total Mensual", f"${total_gastos:,.2f}")
-            st.write(f"🔹 Equivale a: **₡{equiv_crc:,.0f} CRC**")
-            st.write(f"🗓️ Total Anual: **${total_anual:,.2f}**")
+            m_crc = total_m * tasa_cambio
+            a_crc = total_a * tasa_cambio
+            st.metric("Total Mensual", f"${total_m:,.2f}")
+            st.caption(f"Equivale a: ₡{m_crc:,.0f} CRC")
+            st.caption(f"Total Anual: ${total_a:,.2f} / ₡{a_crc:,.0f} CRC")
 
 st.title("Dashboard: Libertad Financiera")
 
@@ -52,9 +53,9 @@ MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
 if 'año_meta_cache' not in st.session_state:
     st.session_state.año_meta_cache = YEAR_ACTUAL + 5
 
-# 2. Sidebar - Variables principales
+# 2. Sidebar - Variables principales (Estrategia de Inversión)
 with st.sidebar:
-    st.header("⚙️ Variables")
+    st.header("⚙️ Variables de Inversión")
     cap_inicial = st.number_input("Capital Inicial ($)", value=135000, step=5000)
     ahorro_mensual = st.number_input("Aporte Mensual ($)", value=2000, step=100)
     rendimiento_anual = st.number_input("Rendimiento del Mercado (%)", value=10.0, step=0.5) / 100
@@ -71,7 +72,7 @@ with st.sidebar:
     liquidez_deseada = st.number_input("Liquidez deseada despues de la compra ($)", value=300000, step=10000)
     
     st.header("💸 Fase de Desembolso")
-    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual para vivir hoy {YEAR_ACTUAL} ($)", value=60000, step=5000)
+    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual hoy {YEAR_ACTUAL} ($)", value=60000, step=5000)
     inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5) / 100
     
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
@@ -108,8 +109,10 @@ condo_anual_acumulado = 0
 
 for mes in range(0, meses):
     año_actual = YEAR_ACTUAL + (mes // 12)
+    
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
+    
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
     cuota_condo_ajustada *= (1 + (inflacion_condo / 12))
 
@@ -133,6 +136,7 @@ for mes in range(0, meses):
         condo_anual_acumulado += cuota_condo_ajustada
         meses_desde_compra = mes - mes_de_la_compra
         es_periodo_extra = meses_desde_compra <= (años_extra_trabajo * 12)
+        
         if es_periodo_extra:
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
@@ -197,7 +201,7 @@ with col_chart:
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Condo_Mes_Graf'] * 12, name="Condo Anual", line=dict(color='yellow', dash='dot')))
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_Vida_Graf'], name="Buffer Vida (2Y)", line=dict(color='orange', dash='dot')))
-    fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
+    fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=11.1))
     st.plotly_chart(fig, use_container_width=True)
 
 # 5. KPIs y Banners
