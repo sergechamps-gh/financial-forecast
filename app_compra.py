@@ -135,7 +135,7 @@ df = pd.DataFrame(datos)
 # 4. Layout
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
-    st.subheader(f"📊 Proyección a {años_proyeccion} Años")
+    st.subheader(f" Proyección a {años_proyeccion} Años")
     libertad_financiera = meta_lograda and año_agotamiento is None
     cols_a_mostrar = ['Año', 'Capital ($)']
     if not libertad_financiera:
@@ -201,7 +201,7 @@ m3.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏁 Capital Post-La
 
 # 6. Auditoría
 st.markdown("---")
-st.markdown("### 📊 Rendimiento del Plan Maestro")
+st.markdown("### 📊 Rendimiento del Plan de inversion")
 c1, c2, c3 = st.columns(3)
 c1.metric("Total Inyectado", f"${round(total_ahorro_propio):,}")
 c2.metric("Intereses Acumulados", f"${round(total_intereses_generados):,}")
