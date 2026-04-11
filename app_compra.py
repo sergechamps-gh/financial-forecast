@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.7.3", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.7.4", layout="wide")
 
 # --- SECCIÓN: FORECAST MENSUAL & CALCULADORA ---
 with st.sidebar:
@@ -18,18 +18,26 @@ with st.sidebar:
         # Selector de moneda base
         moneda_calc = st.radio("Moneda base:", ["USD", "CRC"], horizontal=True)
         
-        # Lógica de incrementos y símbolos
-        step_val = 5.0 if moneda_calc == "USD" else 1000.0
+        # Lógica de incrementos y símbolos (Nuevos steps: $10 / ₡5,000)
+        step_val = 10.0 if moneda_calc == "USD" else 5000.0
         simbolo = "$" if moneda_calc == "USD" else "₡"
         
         st.divider()
         st.write(f"📊 **Gastos en {moneda_calc}**")
         
         g_diario = st.number_input(f"Diario/Comida ({simbolo})", value=0.0, step=step_val)
-        g_servicios = st.number_input(f"Servicios ({simbolo})", value=0.0, step=step_val)
+        
+        st.write("**Servicios & HOA**")
+        g_luz = st.number_input(f"Luz ({simbolo})", value=0.0, step=step_val)
+        g_agua = st.number_input(f"Agua ({simbolo})", value=0.0, step=step_val)
+        g_internet = st.number_input(f"Internet ({simbolo})", value=0.0, step=step_val)
+        g_cel = st.number_input(f"Celular ({simbolo})", value=0.0, step=step_val)
+        g_hoa = st.number_input(f"HOA ({simbolo})", value=0.0, step=step_val)
+        
         g_diversion = st.number_input(f"Diversión ({simbolo})", value=0.0, step=step_val)
         
-        total_m = g_diario + g_servicios + g_diversion
+        # Suma total
+        total_m = g_diario + g_luz + g_agua + g_internet + g_cel + g_hoa + g_diversion
         total_a = total_m * 12
         
         if moneda_calc == "CRC":
@@ -109,10 +117,8 @@ condo_anual_acumulado = 0
 
 for mes in range(0, meses):
     año_actual = YEAR_ACTUAL + (mes // 12)
-    
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
-    
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
     cuota_condo_ajustada *= (1 + (inflacion_condo / 12))
 
@@ -136,7 +142,6 @@ for mes in range(0, meses):
         condo_anual_acumulado += cuota_condo_ajustada
         meses_desde_compra = mes - mes_de_la_compra
         es_periodo_extra = meses_desde_compra <= (años_extra_trabajo * 12)
-        
         if es_periodo_extra:
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
@@ -201,7 +206,7 @@ with col_chart:
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Condo_Mes_Graf'] * 12, name="Condo Anual", line=dict(color='yellow', dash='dot')))
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_Vida_Graf'], name="Buffer Vida (2Y)", line=dict(color='orange', dash='dot')))
-    fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=11.1))
+    fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
 # 5. KPIs y Banners
