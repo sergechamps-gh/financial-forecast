@@ -169,7 +169,7 @@ k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
 with k2: st.metric(f"Gasto Bianual Proyectado (Hoy)", f"${retiro_buffer_hoy:,}")
 with k3: 
-    if meta_lograda: st.success(f"🎯 Apartamento comprado en {mes_nombre_meta} {año_meta}")
+    if meta_lograda: st.success(f"🎯 Aparta comprado en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
 if meta_lograda:
