@@ -7,13 +7,12 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.6.1", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.6.2", layout="wide")
 st.title("Dashboard: Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 
-# Inicializar cache de año de meta para evitar NameError
 if 'año_meta_cache' not in st.session_state:
     st.session_state.año_meta_cache = YEAR_ACTUAL + 5
 
@@ -40,7 +39,8 @@ with st.sidebar:
     inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5) / 100
     
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
-    st.caption(f"Proyección hasta el año: {YEAR_ACTUAL + años_proyeccion}")
+    año_final_proy = YEAR_ACTUAL + años_proyeccion
+    st.caption(f"Proyección hasta el año: {año_final_proy}")
 
     st.header("🛡️ Plan de Contingencia")
     año_base = st.session_state.año_meta_cache
@@ -168,7 +168,6 @@ with col_chart:
 
 # 5. KPIs y Banners
 st.markdown("---")
-año_final_proy = YEAR_ACTUAL + años_proyeccion
 año_libertad = (año_meta if año_meta else YEAR_ACTUAL) + años_extra_trabajo
 
 k1, k2, k3 = st.columns(3)
@@ -183,7 +182,8 @@ if meta_lograda:
         msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, el capital se agota en **{año_agotamiento}**. Ajusta años extra o inversión mensual."
         st.warning(msg_w)
     else:
-        msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} {año_meta}. Retiro oficial inicia en **{año_libertad}**. Sostenible hasta el final de la proyección."
+        # AQUÍ ESTÁ EL CAMBIO: Año de sostenibilidad explícito
+        msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} {año_meta}. Retiro oficial inicia en **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
         st.info(msg_i)
 
 st.markdown("---")
