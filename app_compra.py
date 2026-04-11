@@ -135,7 +135,7 @@ df = pd.DataFrame(datos)
 # 4. Layout
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
-    st.subheader(f"📑 Hoja de Ruta al 2033 (Techo $180k)")
+    st.subheader(f" Proyección a {años_proyeccion} Años")
     libertad_financiera = meta_lograda and año_agotamiento is None
     cols_a_mostrar = ['Año', 'Capital ($)']
     if not libertad_financiera:
