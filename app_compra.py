@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.5.5", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.5.6", layout="wide")
 st.title("🧬 Dashboard: Objetivo 2033 (Cap $180k)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -156,24 +156,20 @@ with col_table:
 with col_chart:
     st.subheader("📈 Proyección de Capital vs Gastos")
     fig = go.Figure()
-    # Línea de Capital (Verde Esmeralda)
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
-    # Línea de Condo (Amarilla) - Anualizada
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Condo_Mes_Graf'] * 12, name="Condo Anual", line=dict(color='yellow', dash='dot')))
-    # Línea de Buffer Vida (Naranja) - Bienal
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_Vida_Graf'], name="Buffer Vida (2Y)", line=dict(color='orange', dash='dot')))
-    
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. KPIs y Banners (Full v4.5.1)
+# 5. KPIs y Banners
 st.markdown("---")
 año_final_proy = YEAR_ACTUAL + años_proyeccion
 k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
 with k2: st.metric(f"Gasto Bianual Proyectado (Hoy)", f"${retiro_buffer_hoy:,}")
 with k3: 
-    if meta_lograda: st.success(f"🎯 Objetivo 2033 Logrado en {mes_nombre_meta}")
+    if meta_lograda: st.success(f"🎯 Apartamento comprado en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
 if meta_lograda:
