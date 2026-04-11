@@ -7,7 +7,34 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.6.6", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.7.0", layout="wide")
+
+# --- CALCULADORA INVISIBLE (POPOVER) ---
+with st.sidebar:
+    st.title("Serge Strategy")
+    with st.popover("🧮 Calculadora de Gastos"):
+        st.subheader("Conversor y Gastos")
+        tasa_cambio = st.number_input("Tipo de cambio (CRC por USD)", value=515.0, step=1.0)
+        
+        col1, col2 = st.columns(2)
+        monto_calc = col1.number_input("Monto", value=0.0)
+        moneda = col2.selectbox("Moneda", ["USD", "CRC"])
+        
+        if moneda == "USD":
+            st.info(f"Equivale a: ₡{round(monto_calc * tasa_cambio):,}")
+        else:
+            st.info(f"Equivale a: ${round(monto_calc / tasa_cambio, 2):,}")
+            
+        st.divider()
+        st.write("📊 **Sumadora de Gastos (Mensual)**")
+        g_diario = st.number_input("Diario/Comida ($)", value=0.0)
+        g_servicios = st.number_input("Servicios ($)", value=0.0)
+        g_diversion = st.number_input("Diversión ($)", value=0.0)
+        total_gastos = g_diario + g_servicios + g_diversion
+        st.metric("Total Gastos", f"${total_gastos:,}")
+        if st.button("Usar como Aporte Mensual"):
+             st.session_state.ahorro_temp = total_gastos # Opcional por si quieres linkearlo
+
 st.title("Dashboard: Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -16,7 +43,7 @@ MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
 if 'año_meta_cache' not in st.session_state:
     st.session_state.año_meta_cache = YEAR_ACTUAL + 5
 
-# 2. Sidebar
+# 2. Sidebar - Variables principales
 with st.sidebar:
     st.header("⚙️ Variables")
     cap_inicial = st.number_input("Capital Inicial ($)", value=135000, step=5000)
@@ -48,7 +75,7 @@ with st.sidebar:
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
     inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=0, step=100)
 
-# 3. Motor de Cálculo
+# 3. Motor de Cálculo (Misma lógica v4.6.6)
 meses = años_proyeccion * 12
 datos = []
 capital_actual = cap_inicial
@@ -72,15 +99,11 @@ condo_anual_acumulado = 0
 
 for mes in range(0, meses):
     año_actual = YEAR_ACTUAL + (mes // 12)
-    
-    # Lógica de Inflación y Mercado
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
-    
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
     cuota_condo_ajustada *= (1 + (inflacion_condo / 12))
 
-    # Verificación de Meta
     if not meta_lograda and capital_actual >= (precio_aparta + liquidez_deseada):
         meta_lograda = True
         año_meta = año_actual
@@ -92,7 +115,6 @@ for mes in range(0, meses):
         capital_post_meta = capital_actual
         retiro_buffer_anual += precio_aparta
 
-    # Flujos de Efectivo
     if not meta_lograda:
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
@@ -102,7 +124,6 @@ for mes in range(0, meses):
         condo_anual_acumulado += cuota_condo_ajustada
         meses_desde_compra = mes - mes_de_la_compra
         es_periodo_extra = meses_desde_compra <= (años_extra_trabajo * 12)
-        
         if es_periodo_extra:
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
@@ -122,7 +143,6 @@ for mes in range(0, meses):
     if capital_actual <= 0 and año_agotamiento is None:
         año_agotamiento = año_actual
 
-    # Captura de datos anuales (incluyendo el año 0/2026)
     if (mes + 1) % 12 == 0:
         es_retiro_status = meta_lograda and (mes - mes_de_la_compra > (años_extra_trabajo * 12))
         datos.append({
@@ -177,7 +197,7 @@ año_libertad = (año_meta if año_meta else YEAR_ACTUAL) + años_extra_trabajo
 
 k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
-with k2: st.metric(f"Gasto Bianual Proyectado (Hoy 2026)", f"${retiro_buffer_hoy:,}")
+with k2: st.metric(f"Gasto Bianual Proyectado (V. 2026)", f"${retiro_buffer_hoy:,}")
 with k3: 
     if meta_lograda: st.success(f"🎯 Aparta comprado en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
