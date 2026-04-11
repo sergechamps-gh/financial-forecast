@@ -11,7 +11,7 @@ st.set_page_config(page_title=f"Serge Financial Strategy v4.7.1", layout="wide")
 
 # --- CALCULADORA INVISIBLE (POPOVER) ---
 with st.sidebar:
-    st.title("Forecast Mensual”)
+    st.title("Forecast Mensual")
     with st.popover("🧮 Calculadora de Gastos"):
         st.subheader("Conversor y Presupuesto")
         tasa_cambio = st.number_input("Tipo de cambio (CRC por USD)", value=515.0, step=1.0)
