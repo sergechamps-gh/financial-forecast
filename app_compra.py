@@ -7,12 +7,12 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.7.1", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.7.2", layout="wide")
 
 # --- CALCULADORA INVISIBLE (POPOVER) ---
 with st.sidebar:
-    st.title("Forecast Mensual")
-    with st.popover("🧮 Calculadora de Gastos"):
+    st.title("Serge Strategy")
+    with st.popover("🧮 Forecast Mensual"):
         st.subheader("Conversor y Presupuesto")
         tasa_cambio = st.number_input("Tipo de cambio (CRC por USD)", value=515.0, step=1.0)
         
@@ -31,15 +31,18 @@ with st.sidebar:
         g_diversion = st.number_input(f"Diversión ({simbolo})", value=0.0, step=step_val)
         
         total_gastos = g_diario + g_servicios + g_diversion
+        total_anual = total_gastos * 12
         
         if moneda_calc == "CRC":
             equiv_usd = total_gastos / tasa_cambio
-            st.metric("Total Gastos", f"₡{total_gastos:,.0f}")
-            st.caption(f"Equivale a: ${equiv_usd:,.2f} USD")
+            st.metric("Total Mensual", f"₡{total_gastos:,.0f}")
+            st.write(f"🔹 Equivale a: **${equiv_usd:,.2f} USD**")
+            st.write(f"🗓️ Total Anual: **₡{total_anual:,.0f}**")
         else:
             equiv_crc = total_gastos * tasa_cambio
-            st.metric("Total Gastos", f"${total_gastos:,.2f}")
-            st.caption(f"Equivale a: ₡{equiv_crc:,.0f} CRC")
+            st.metric("Total Mensual", f"${total_gastos:,.2f}")
+            st.write(f"🔹 Equivale a: **₡{equiv_crc:,.0f} CRC**")
+            st.write(f"🗓️ Total Anual: **${total_anual:,.2f}**")
 
 st.title("Dashboard: Libertad Financiera")
 
@@ -49,7 +52,7 @@ MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
 if 'año_meta_cache' not in st.session_state:
     st.session_state.año_meta_cache = YEAR_ACTUAL + 5
 
-# 2. Sidebar - Variables principales (Dashboard siempre en USD)
+# 2. Sidebar - Variables principales
 with st.sidebar:
     st.header("⚙️ Variables")
     cap_inicial = st.number_input("Capital Inicial ($)", value=135000, step=5000)
@@ -81,7 +84,7 @@ with st.sidebar:
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
     inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=0, step=100)
 
-# 3. Motor de Cálculo (Misma lógica v4.6.6)
+# 3. Motor de Cálculo
 meses = años_proyeccion * 12
 datos = []
 capital_actual = cap_inicial
