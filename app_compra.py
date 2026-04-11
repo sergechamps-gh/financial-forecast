@@ -7,33 +7,39 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.7.0", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.7.1", layout="wide")
 
 # --- CALCULADORA INVISIBLE (POPOVER) ---
 with st.sidebar:
     st.title("Serge Strategy")
     with st.popover("🧮 Calculadora de Gastos"):
-        st.subheader("Conversor y Gastos")
+        st.subheader("Conversor y Presupuesto")
         tasa_cambio = st.number_input("Tipo de cambio (CRC por USD)", value=515.0, step=1.0)
         
-        col1, col2 = st.columns(2)
-        monto_calc = col1.number_input("Monto", value=0.0)
-        moneda = col2.selectbox("Moneda", ["USD", "CRC"])
+        # Selector de moneda global para la calculadora
+        moneda_calc = st.radio("Moneda de trabajo:", ["USD", "CRC"], horizontal=True)
         
-        if moneda == "USD":
-            st.info(f"Equivale a: ₡{round(monto_calc * tasa_cambio):,}")
-        else:
-            st.info(f"Equivale a: ${round(monto_calc / tasa_cambio, 2):,}")
-            
+        # Definir incrementos y símbolos dinámicos
+        step_val = 5.0 if moneda_calc == "USD" else 1000.0
+        simbolo = "$" if moneda_calc == "USD" else "₡"
+        
         st.divider()
-        st.write("📊 **Sumadora de Gastos (Mensual)**")
-        g_diario = st.number_input("Diario/Comida ($)", value=0.0)
-        g_servicios = st.number_input("Servicios ($)", value=0.0)
-        g_diversion = st.number_input("Diversión ($)", value=0.0)
+        st.write(f"📊 **Sumadora de Gastos ({moneda_calc})**")
+        
+        g_diario = st.number_input(f"Diario/Comida ({simbolo})", value=0.0, step=step_val)
+        g_servicios = st.number_input(f"Servicios ({simbolo})", value=0.0, step=step_val)
+        g_diversion = st.number_input(f"Diversión ({simbolo})", value=0.0, step=step_val)
+        
         total_gastos = g_diario + g_servicios + g_diversion
-        st.metric("Total Gastos", f"${total_gastos:,}")
-        if st.button("Usar como Aporte Mensual"):
-             st.session_state.ahorro_temp = total_gastos # Opcional por si quieres linkearlo
+        
+        if moneda_calc == "CRC":
+            equiv_usd = total_gastos / tasa_cambio
+            st.metric("Total Gastos", f"₡{total_gastos:,.0f}")
+            st.caption(f"Equivale a: ${equiv_usd:,.2f} USD")
+        else:
+            equiv_crc = total_gastos * tasa_cambio
+            st.metric("Total Gastos", f"${total_gastos:,.2f}")
+            st.caption(f"Equivale a: ₡{equiv_crc:,.0f} CRC")
 
 st.title("Dashboard: Libertad Financiera")
 
@@ -43,7 +49,7 @@ MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
 if 'año_meta_cache' not in st.session_state:
     st.session_state.año_meta_cache = YEAR_ACTUAL + 5
 
-# 2. Sidebar - Variables principales
+# 2. Sidebar - Variables principales (Dashboard siempre en USD)
 with st.sidebar:
     st.header("⚙️ Variables")
     cap_inicial = st.number_input("Capital Inicial ($)", value=135000, step=5000)
