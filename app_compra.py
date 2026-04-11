@@ -20,7 +20,7 @@ with st.sidebar:
     ahorro_mensual = st.number_input("Aporte Mensual ($)", value=2000, step=100)
     rendimiento_anual = st.number_input("Rendimiento del Mercado (%)", value=10.0, step=0.5) / 100
     
-    st.header("🏠 Inmueble (Límite Serge)")
+    st.header("🏠 Precio Inmueble")
     precio_hoy = st.number_input(f"Precio Maximo Hoy ($)", value=180000, step=5000)
     inflacion_inmueble = st.number_input("Inflación Inmueble (%)", value=4.0, step=0.5) / 100
     
