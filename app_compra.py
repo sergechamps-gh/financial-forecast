@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.5.4", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.5.5", layout="wide")
 st.title("🧬 Dashboard: Objetivo 2033 (Cap $180k)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -97,7 +97,6 @@ for mes in range(1, meses + 1):
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
             total_ahorro_propio += inversion_extra_mensual
-            # Capturar el capital justo cuando termina la etapa laboral
             if meses_desde_compra == (años_extra_trabajo * 12):
                 capital_post_laboral = capital_actual
         else:
@@ -128,7 +127,6 @@ for mes in range(1, meses + 1):
         })
         inyectado_anual = 0; retiro_buffer_anual = 0; condo_anual_acumulado = 0
 
-# Si no hay años extra, el capital post-laboral es el mismo post-compra
 if años_extra_trabajo == 0:
     capital_post_laboral = capital_post_meta
 
@@ -156,13 +154,19 @@ with col_table:
     )
 
 with col_chart:
-    st.subheader("📈 Proyección de Capital")
+    st.subheader("📈 Proyección de Capital vs Gastos")
     fig = go.Figure()
+    # Línea de Capital (Verde Esmeralda)
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
+    # Línea de Condo (Amarilla) - Anualizada
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Condo_Mes_Graf'] * 12, name="Condo Anual", line=dict(color='yellow', dash='dot')))
+    # Línea de Buffer Vida (Naranja) - Bienal
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_Vida_Graf'], name="Buffer Vida (2Y)", line=dict(color='orange', dash='dot')))
+    
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. KPIs y Banners (RESTAURADOS v4.5.1)
+# 5. KPIs y Banners (Full v4.5.1)
 st.markdown("---")
 año_final_proy = YEAR_ACTUAL + años_proyeccion
 k1, k2, k3 = st.columns(3)
@@ -197,7 +201,6 @@ st.markdown("---")
 m1, m2, m3 = st.columns(3)
 m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final (Futuro)</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
 m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
-# Métrica: Capital Post-Laboral en Azul Bold
 m3.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏁 Capital Post-Laboral</p><p style='font-size:24px; color:#1E90FF; font-weight:bold; margin-top:0px;'>${capital_post_laboral:,.0f}</p>", unsafe_allow_html=True)
 
 # 6. Auditoría
