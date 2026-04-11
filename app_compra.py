@@ -5,11 +5,9 @@ import numpy_financial as npf
 from datetime import datetime
 
 # 1. Configuración de tiempo dinámica
-AHORA = datetime.now()
-YEAR_ACTUAL = AHORA.year
-MES_ACTUAL = AHORA.month # Abril (4)
+YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.5.8", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.5.7", layout="wide")
 st.title("Dashboard: Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -40,11 +38,18 @@ with st.sidebar:
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
 
     st.header("🛡️ Plan de Contingencia")
-    años_extra_trabajo = st.slider("Años extra de trabajo post-compra", 0, 15, 1)
+    
+    # Calculamos el año proyectado para el slider basándonos en la lógica del motor
+    texto_slider = "Años extra de trabajo post-compra"
+    if meta_lograda:
+        año_final_trabajo = año_meta + años_extra_trabajo
+        texto_slider = f"Años extra de trabajo post-compra (Termina en: {año_final_trabajo})"
+    
+    años_extra_trabajo = st.slider(texto_slider, 0, 15, años_extra_trabajo)
     inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=0, step=100)
 
 # 3. Motor de Cálculo
-meses_proyeccion = años_proyeccion * 12
+meses = años_proyeccion * 12
 datos = []
 capital_actual = cap_inicial
 precio_aparta = precio_hoy
@@ -66,13 +71,8 @@ inyectado_anual = 0
 retiro_buffer_anual = 0 
 condo_anual_acumulado = 0
 
-# Lógica de meses restantes del 2026
-meses_restantes_año_actual = 12 - MES_ACTUAL
-
-for mes in range(1, meses_proyeccion + 1):
-    # Calcular el año real basado en el mes actual
-    mes_relativo = mes + MES_ACTUAL
-    año_actual = YEAR_ACTUAL + ((mes_relativo - 1) // 12)
+for mes in range(1, meses + 1):
+    año_actual = YEAR_ACTUAL + (mes // 12)
     
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
@@ -83,9 +83,7 @@ for mes in range(1, meses_proyeccion + 1):
     if not meta_lograda and capital_actual >= (precio_aparta + liquidez_deseada):
         meta_lograda = True
         año_meta = año_actual
-        # Obtenemos el nombre del mes correctamente
-        mes_index = (mes_relativo - 1) % 12
-        mes_nombre_meta = MESES_NOMBRES[mes_index]
+        mes_nombre_meta = MESES_NOMBRES[(mes % 12) - 1]
         mes_de_la_compra = mes
         costo_final_aparta = precio_aparta
         capital_actual -= precio_aparta
@@ -121,8 +119,7 @@ for mes in range(1, meses_proyeccion + 1):
     if capital_actual <= 0 and año_agotamiento is None:
         año_agotamiento = año_actual
 
-    # REGISTRO DE DATOS: Si es diciembre de cualquier año o es el mes de la compra
-    if (mes_relativo % 12 == 0) or (mes == mes_de_la_compra):
+    if mes % 12 == 0:
         es_retiro_status = meta_lograda and (mes - mes_de_la_compra > (años_extra_trabajo * 12))
         datos.append({
             "Año": año_actual,
