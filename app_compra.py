@@ -154,7 +154,7 @@ with col_table:
     )
 
 with col_chart:
-    st.subheader("📈 Proyección de Capital vs Gastos")
+    st.subheader("📈 Capital vs Gastos")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Condo_Mes_Graf'] * 12, name="Condo Anual", line=dict(color='yellow', dash='dot')))
