@@ -201,7 +201,7 @@ m3.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏁 Capital Post-La
 
 # 6. Auditoría
 st.markdown("---")
-st.markdown("### 📊 Rendimiento del Plan de inversion")
+st.markdown("### 📊 Rendimiento del Plan de Inversion")
 c1, c2, c3 = st.columns(3)
 c1.metric("Total Inyectado", f"${round(total_ahorro_propio):,}")
 c2.metric("Intereses Acumulados", f"${round(total_intereses_generados):,}")
