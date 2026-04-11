@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.6.0", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.6.1", layout="wide")
 st.title("Dashboard: Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -39,16 +39,13 @@ with st.sidebar:
     retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual para vivir (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
     inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5) / 100
     
-    # --- SLIDER PROYECCIÓN CON AÑO DINÁMICO ---
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
     st.caption(f"Proyección hasta el año: {YEAR_ACTUAL + años_proyeccion}")
 
     st.header("🛡️ Plan de Contingencia")
-    # --- SLIDER CONTINGENCIA CON AÑO DINÁMICO ---
     año_base = st.session_state.año_meta_cache
     años_extra_trabajo = st.slider(f"Años extra post-compra (Compra: {año_base})", 0, 15, 1)
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
-    
     inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=0, step=100)
 
 # 3. Motor de Cálculo
@@ -75,7 +72,6 @@ condo_anual_acumulado = 0
 
 for mes in range(1, meses + 1):
     año_actual = YEAR_ACTUAL + (mes // 12)
-    
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
     
@@ -146,28 +142,59 @@ df = pd.DataFrame(datos)
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"🧬 Proyección a {años_proyeccion} Años")
-    cols_a_mostrar = ['Año', 'Capital ($)', 'Retiro ($)', 'Status']
-    st.dataframe(df[cols_a_mostrar].style.format({"Año": "{:.0f}", "Capital ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}"}), height=400, use_container_width=True, hide_index=True)
+    libertad_financiera = meta_lograda and año_agotamiento is None
+    cols_a_mostrar = ['Año', 'Capital ($)']
+    if not libertad_financiera:
+        cols_a_mostrar.extend(['Precio Apt', 'Inyectado ($)'])
+    if df['Condo ($)'].sum() > 0:
+        cols_a_mostrar.append('Condo ($)')
+    cols_a_mostrar.extend(['Retiro ($)', 'Status'])
+    
+    st.dataframe(
+        df[cols_a_mostrar].style.format({
+            "Año": "{:.0f}", "Capital ($)": "{:,.0f}", 
+            "Inyectado ($)": "{:,.0f}", "Retiro ($)": "{:,.0f}", "Condo ($)": "{:,.0f}"
+        }), height=400, use_container_width=True, hide_index=True
+    )
 
 with col_chart:
     st.subheader("📈 Capital vs Gastos")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
-    fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark")
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Condo_Mes_Graf'] * 12, name="Condo Anual", line=dict(color='yellow', dash='dot')))
+    fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_Vida_Graf'], name="Buffer Vida (2Y)", line=dict(color='orange', dash='dot')))
+    fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. KPIs
+# 5. KPIs y Banners
 st.markdown("---")
 año_final_proy = YEAR_ACTUAL + años_proyeccion
 año_libertad = (año_meta if año_meta else YEAR_ACTUAL) + años_extra_trabajo
+
+k1, k2, k3 = st.columns(3)
+with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
+with k2: st.metric(f"Gasto Bianual Proyectado (Hoy)", f"${retiro_buffer_hoy:,}")
+with k3: 
+    if meta_lograda: st.success(f"🎯 Aparta comprado en {mes_nombre_meta} {año_meta}")
+    else: st.error("🎯 Meta No Alcanzada")
+
+if meta_lograda:
+    if año_agotamiento:
+        msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, el capital se agota en **{año_agotamiento}**. Ajusta años extra o inversión mensual."
+        st.warning(msg_w)
+    else:
+        msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} {año_meta}. Retiro oficial inicia en **{año_libertad}**. Sostenible hasta el final de la proyección."
+        st.info(msg_i)
+
+st.markdown("---")
 m1, m2, m3 = st.columns(3)
-m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Inmueble</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
-m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
-m3.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏁 Post-Laboral ({año_libertad})</p><p style='font-size:24px; color:#1E90FF; font-weight:bold; margin-top:0px;'>${capital_post_laboral:,.0f}</p>", unsafe_allow_html=True)
+m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
+m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
+m3.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏁 Capital Post-Laboral ({año_libertad})</p><p style='font-size:24px; color:#1E90FF; font-weight:bold; margin-top:0px;'>${capital_post_laboral:,.0f}</p>", unsafe_allow_html=True)
 
 # 6. Auditoría
 st.markdown("---")
-st.markdown("### 📊 Rendimiento del Plan")
+st.markdown("### 📊 Rendimiento del Plan de Inversión")
 c1, c2, c3 = st.columns(3)
 c1.metric("Total Inyectado", f"${round(total_ahorro_propio):,}")
 c2.metric("Intereses Acumulados", f"${round(total_intereses_generados):,}")
