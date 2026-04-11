@@ -4,10 +4,10 @@ import plotly.graph_objects as go
 import numpy_financial as npf
 from datetime import datetime
 
-# 1. Configuración de tiempo dinámica
-YEAR_ACTUAL = datetime.now().year
+# 1. Configuración de tiempo - Regresamos a 2026 como base
+YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.6.3", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.6.5", layout="wide")
 st.title("Dashboard: Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -38,6 +38,7 @@ with st.sidebar:
     retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual para vivir (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
     inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5) / 100
     
+    # Cantidad de años y proyección total
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
     año_final_proy = YEAR_ACTUAL + años_proyeccion
     st.caption(f"Proyección hasta el año: {año_final_proy}")
@@ -71,7 +72,9 @@ retiro_buffer_anual = 0
 condo_anual_acumulado = 0
 
 for mes in range(1, meses + 1):
+    # La tabla ahora calcula basándose en 2026
     año_actual = YEAR_ACTUAL + (mes // 12)
+    
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
     
@@ -177,7 +180,6 @@ with k3:
     if meta_lograda: st.success(f"🎯 Aparta comprado en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
-# Banners Descriptivos v4.5 Style
 if meta_lograda:
     if año_agotamiento:
         if años_extra_trabajo > 0:
