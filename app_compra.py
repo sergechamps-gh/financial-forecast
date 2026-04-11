@@ -13,6 +13,10 @@ st.title("Dashboard: Libertad Financiera")
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 
+# Inicializar cache de año de meta para evitar NameError en la primera corrida
+if 'año_meta_cache' not in st.session_state:
+    st.session_state.año_meta_cache = YEAR_ACTUAL + 5
+
 # 2. Sidebar
 with st.sidebar:
     st.header("⚙️ Variables")
@@ -37,9 +41,13 @@ with st.sidebar:
     
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
 
-
-st.header("🛡️ Plan de Contingencia") # SLIDER DINÁMICO: Muestra el año final basado en el cálculo previoaño_fin_est = st.session_state.año_meta_cache años_extra_trabajo = st.slider(f"Años extra post-compra (Termina en: {año_fin_est + 1 if 'años_extra' not in locals() else año_fin_est + años_extra_trabajo})", 0, 15, 1) inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=0, step=100)
-
+    st.header("🛡️ Plan de Contingencia")
+    # Arreglo del Slider dinámico
+    año_base = st.session_state.año_meta_cache
+    años_extra_trabajo = st.slider(f"Años extra post-compra (Termina en: {año_base})", 0, 15, 1)
+    # Actualizamos el texto dinámicamente sumando el valor del slider
+    st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
+    inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=0, step=100)
 
 # 3. Motor de Cálculo
 meses = años_proyeccion * 12
@@ -76,6 +84,7 @@ for mes in range(1, meses + 1):
     if not meta_lograda and capital_actual >= (precio_aparta + liquidez_deseada):
         meta_lograda = True
         año_meta = año_actual
+        st.session_state.año_meta_cache = año_meta # Guardamos el año real para la próxima ejecución
         mes_nombre_meta = MESES_NOMBRES[(mes % 12) - 1]
         mes_de_la_compra = mes
         costo_final_aparta = precio_aparta
@@ -172,7 +181,7 @@ with k3:
     if meta_lograda: st.success(f"🎯 Aparta comprado en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
-año_libertad = año_meta + años_extra_trabajo if meta_lograda else año_final_proy
+año_libertad = (año_meta if año_meta else YEAR_ACTUAL) + años_extra_trabajo
 
 if meta_lograda:
     if año_agotamiento:
