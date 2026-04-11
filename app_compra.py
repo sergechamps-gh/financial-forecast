@@ -4,17 +4,17 @@ import plotly.graph_objects as go
 import numpy_financial as npf
 from datetime import datetime
 
-# 1. Configuración de tiempo - Inicio en 2027
-YEAR_START = 2027 
+# 1. Configuración de tiempo dinámica
+YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.6.4", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.6.3", layout="wide")
 st.title("Dashboard: Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 
 if 'año_meta_cache' not in st.session_state:
-    st.session_state.año_meta_cache = YEAR_START + 5
+    st.session_state.año_meta_cache = YEAR_ACTUAL + 5
 
 # 2. Sidebar
 with st.sidebar:
@@ -35,11 +35,11 @@ with st.sidebar:
     liquidez_deseada = st.number_input("Liquidez deseada despues de la compra ($)", value=300000, step=10000)
     
     st.header("💸 Fase de Desembolso")
-    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual para vivir (valor {YEAR_START} $)", value=60000, step=5000)
+    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual para vivir (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
     inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5) / 100
     
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
-    año_final_proy = YEAR_START + años_proyeccion
+    año_final_proy = YEAR_ACTUAL + años_proyeccion
     st.caption(f"Proyección hasta el año: {año_final_proy}")
 
     st.header("🛡️ Plan de Contingencia")
@@ -71,7 +71,7 @@ retiro_buffer_anual = 0
 condo_anual_acumulado = 0
 
 for mes in range(1, meses + 1):
-    año_actual = YEAR_START + (mes // 12)
+    año_actual = YEAR_ACTUAL + (mes // 12)
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
     
@@ -141,7 +141,7 @@ df = pd.DataFrame(datos)
 # 4. Layout
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
-    st.subheader(f"🧬 Proyección (Inicio 2027) a {años_proyeccion} Años")
+    st.subheader(f"🧬 Proyección a {años_proyeccion} Años")
     libertad_financiera = meta_lograda and año_agotamiento is None
     cols_a_mostrar = ['Año', 'Capital ($)']
     if not libertad_financiera:
@@ -166,22 +166,27 @@ with col_chart:
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. KPIs y Banners descriptivos
+# 5. KPIs y Banners
 st.markdown("---")
-año_libertad = (año_meta if año_meta else YEAR_START) + años_extra_trabajo
+año_libertad = (año_meta if año_meta else YEAR_ACTUAL) + años_extra_trabajo
 
 k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
-with k2: st.metric(f"Gasto Bianual Proyectado (V. 2027)", f"${retiro_buffer_hoy:,}")
+with k2: st.metric(f"Gasto Bianual Proyectado (Hoy)", f"${retiro_buffer_hoy:,}")
 with k3: 
     if meta_lograda: st.success(f"🎯 Aparta comprado en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
+# Banners Descriptivos v4.5 Style
 if meta_lograda:
     if año_agotamiento:
-        msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, " + \
-                (f"seguidos de {años_extra_trabajo} años de inversión extra. " if inversion_extra_mensual > 0 else f"posponiendo el retiro {años_extra_trabajo} año(s). " if años_extra_trabajo > 0 else "") + \
-                f"El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+        if años_extra_trabajo > 0:
+            if inversion_extra_mensual > 0:
+                msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+            else:
+                msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, posponiendo el retiro {años_extra_trabajo} año(s). El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+        else:
+            msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
         st.warning(msg_w)
     else:
         if años_extra_trabajo > 0:
