@@ -35,7 +35,7 @@ with st.sidebar:
     liquidez_deseada = st.number_input("Liquidez deseada despues de la compra ($)", value=300000, step=10000)
     
     st.header("💸 Fase de Desembolso")
-    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual para vivir (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
+    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual para vivir (Hoy {YEAR_ACTUAL} $)", value=60000, step=5000)
     inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5) / 100
     
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
@@ -177,7 +177,7 @@ año_libertad = (año_meta if año_meta else YEAR_ACTUAL) + años_extra_trabajo
 
 k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
-with k2: st.metric(f"Gasto Bianual Proyectado (V. 2026)", f"${retiro_buffer_hoy:,}")
+with k2: st.metric(f"Gasto Bianual Proyectado (Hoy 2026)", f"${retiro_buffer_hoy:,}")
 with k3: 
     if meta_lograda: st.success(f"🎯 Aparta comprado en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
