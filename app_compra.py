@@ -7,8 +7,8 @@ from datetime import datetime
 # 1. Configuración de tiempo dinámica
 YEAR_ACTUAL = datetime.now().year
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.5.0", layout="wide")
-st.title("🧬 Dashboard de Libertad Financiera (Compra)")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.5.3", layout="wide")
+st.title("🧬 Dashboard: Objetivo 2033 (Cap $180k)")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
                  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
@@ -20,8 +20,8 @@ with st.sidebar:
     ahorro_mensual = st.number_input("Aporte Mensual ($)", value=2000, step=100)
     rendimiento_anual = st.number_input("Rendimiento del Mercado (%)", value=10.0, step=0.5) / 100
     
-    st.header("🏠 Inmueble")
-    precio_hoy = st.number_input(f"Precio del aparta (en {YEAR_ACTUAL}) ($)", value=200000, step=5000)
+    st.header("🏠 Inmueble (Límite Serge)")
+    precio_hoy = st.number_input(f"Precio Maximo Hoy ($)", value=180000, step=5000)
     inflacion_inmueble = st.number_input("Inflación Inmueble (%)", value=4.0, step=0.5) / 100
     
     st.subheader("🏢 Gastos de Condominio")
@@ -55,12 +55,13 @@ cuota_condo_ajustada = cuota_condo_hoy
 año_agotamiento = None
 costo_final_aparta = 0
 capital_post_meta = 0
+capital_al_retiro = 0 # Nueva variable para el pico de ahorro
 
 total_ahorro_propio = cap_inicial
 total_intereses_generados = 0
 
 inyectado_anual = 0
-retiro_buffer_anual = 0 # Solo para el buffer/compra
+retiro_buffer_anual = 0 
 condo_anual_acumulado = 0
 
 for mes in range(1, meses + 1):
@@ -72,7 +73,6 @@ for mes in range(1, meses + 1):
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
     cuota_condo_ajustada *= (1 + (inflacion_condo / 12))
 
-    # Lógica de Compra
     if not meta_lograda and capital_actual >= (precio_aparta + liquidez_deseada):
         meta_lograda = True
         año_meta = año_actual
@@ -81,17 +81,15 @@ for mes in range(1, meses + 1):
         costo_final_aparta = precio_aparta
         capital_actual -= precio_aparta
         capital_post_meta = capital_actual
-        retiro_buffer_anual += precio_aparta # La compra cuenta como retiro
+        retiro_buffer_anual += precio_aparta
 
     if not meta_lograda:
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
         total_ahorro_propio += ahorro_mensual
     else:
-        # Gastos post-compra
         capital_actual -= cuota_condo_ajustada
         condo_anual_acumulado += cuota_condo_ajustada
-
         meses_desde_compra = mes - mes_de_la_compra
         es_periodo_extra = meses_desde_compra <= (años_extra_trabajo * 12)
         
@@ -99,9 +97,11 @@ for mes in range(1, meses + 1):
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
             total_ahorro_propio += inversion_extra_mensual
+            # El último mes de este periodo es el momento del retiro real
+            if meses_desde_compra == (años_extra_trabajo * 12):
+                capital_al_retiro = capital_actual
         else:
             meses_post_trabajo = meses_desde_compra - (años_extra_trabajo * 12)
-            # Retiro Bianual estricto
             if meses_post_trabajo == 1 or (meses_post_trabajo > 1 and meses_post_trabajo % 24 == 0):
                 capital_actual -= gasto_buffer_ajustado
                 retiro_buffer_anual += gasto_buffer_ajustado
@@ -120,7 +120,7 @@ for mes in range(1, meses + 1):
             "Capital ($)": round(capital_actual) if capital_actual > 0 else 0,
             "Precio Apt": "COMPRADO" if meta_lograda else f"{round(precio_aparta):,}",
             "Inyectado ($)": round(inyectado_anual),
-            "Retiro ($)": round(retiro_buffer_anual), # YA NO incluye condo
+            "Retiro ($)": round(retiro_buffer_anual),
             "Condo ($)": round(condo_anual_acumulado),
             "Condo_Mes_Graf": round(cuota_condo_ajustada),
             "Gasto_Vida_Graf": round(gasto_buffer_ajustado),
@@ -130,20 +130,17 @@ for mes in range(1, meses + 1):
 
 df = pd.DataFrame(datos)
 
-# 4. Layout Principal
+# 4. Layout
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
-    st.subheader(f"📑 Proyección a {años_proyeccion} Años")
+    st.subheader(f"📑 Hoja de Ruta al 2033 (Techo $180k)")
     libertad_financiera = meta_lograda and año_agotamiento is None
     cols_a_mostrar = ['Año', 'Capital ($)']
-    
     if not libertad_financiera:
         cols_a_mostrar.append('Precio Apt')
         cols_a_mostrar.append('Inyectado ($)')
-    
     if df['Condo ($)'].sum() > 0:
         cols_a_mostrar.append('Condo ($)')
-        
     cols_a_mostrar.append('Retiro ($)')
     cols_a_mostrar.append('Status')
     
@@ -155,54 +152,45 @@ with col_table:
     )
 
 with col_chart:
-    st.subheader("📈 Capital vs Gastos (Anualizados)")
+    st.subheader("📈 Proyección de Capital")
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df['Año'], y=df['Capital ($)'], name="Capital", line=dict(color='#00d1b2', width=3)))
-    fig.add_trace(go.Scatter(x=df['Año'], y=df['Condo_Mes_Graf'] * 12, name="Condo (Anual)", line=dict(color='yellow', dash='dot')))
-    fig.add_trace(go.Scatter(x=df['Año'], y=df['Gasto_Vida_Graf'], name="Buffer Vida (2Y)", line=dict(color='orange', dash='dot')))
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. KPIs y Banners (v4.4 Logic)
+# 5. KPIs y Banners
 st.markdown("---")
 año_final_proy = YEAR_ACTUAL + años_proyeccion
 k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
-with k2: st.metric(f"Monto del buffer a 2 Años (Hoy)", f"${retiro_buffer_hoy:,}")
+with k2: st.metric(f"Monto Buffer (Hoy)", f"${retiro_buffer_hoy:,}")
 with k3: 
-    if meta_lograda: st.success(f"🎯 Compra realizada en {mes_nombre_meta} {año_meta}")
+    if meta_lograda: st.success(f"🎯 Objetivo Logrado en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
 if meta_lograda:
     año_libertad = año_meta + años_extra_trabajo
     if año_agotamiento:
-        if años_extra_trabajo > 0:
-            if inversion_extra_mensual > 0:
-                msg = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
-            else:
-                msg = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, posponiendo el retiro {años_extra_trabajo} año(s). El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
-        else:
-            msg = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+        msg = f"⚠️ **Alerta:** Compra en {mes_nombre_meta} {año_meta}. El capital se agota en **{año_agotamiento}**."
         st.warning(msg)
     else:
         if años_extra_trabajo > 0:
-            if inversion_extra_mensual > 0:
-                msg_info = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro en {mes_nombre_meta} de **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
-            else:
-                msg_info = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se **pospone el retiro del buffer por {años_extra_trabajo} año(s)** para permitir crecimiento compuesto, iniciando el retiro en {mes_nombre_meta} de **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
+            msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Retiro inicia en **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
         else:
-            msg_info = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Iniciando el retiro en **{mes_nombre_meta} de {año_meta}**. Sostenible hasta el año **{año_final_proy}**."
-        st.info(msg_info)
+            msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Retiro inmediato. Sostenible hasta el año **{año_final_proy}**."
+        st.info(msg_i)
 
 st.markdown("---")
-m1, m2 = st.columns(2)
-m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
+m1, m2, m3 = st.columns(3) # Cambiado a 3 columnas
+m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final (Futuro)</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
 m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
+# Nueva métrica: Capital al Retiro
+m3.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏁 Capital al Momento de Retiro</p><p style='font-size:24px; color:#1E90FF; font-weight:bold; margin-top:0px;'>${capital_al_retiro:,.0f}</p>", unsafe_allow_html=True)
 
 # 6. Auditoría
 st.markdown("---")
-st.markdown("### 📊 Rendimiento Histórico Acumulado")
+st.markdown("### 📊 Rendimiento del Plan Maestro")
 c1, c2, c3 = st.columns(3)
-c1.metric("Total Ahorro Propio (Inyectado)", f"${round(total_ahorro_propio):,}")
-c2.metric("Total Intereses Generados", f"${round(total_intereses_generados):,}")
-c3.metric("Eficiencia (Multiplicador)", f"{round(total_intereses_generados / total_ahorro_propio, 2)}x")
+c1.metric("Total Inyectado", f"${round(total_ahorro_propio):,}")
+c2.metric("Intereses Acumulados", f"${round(total_intereses_generados):,}")
+c3.metric("Multiplicador", f"{round(total_intereses_generados / total_ahorro_propio, 2)}x")
