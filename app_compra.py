@@ -4,10 +4,10 @@ import plotly.graph_objects as go
 import numpy_financial as npf
 from datetime import datetime
 
-# 1. Configuración de tiempo - Regresamos a 2026 como base
+# 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.6.5", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.6.6", layout="wide")
 st.title("Dashboard: Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -38,7 +38,6 @@ with st.sidebar:
     retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual para vivir (valor {YEAR_ACTUAL} $)", value=60000, step=5000)
     inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5) / 100
     
-    # Cantidad de años y proyección total
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
     año_final_proy = YEAR_ACTUAL + años_proyeccion
     st.caption(f"Proyección hasta el año: {año_final_proy}")
@@ -71,27 +70,29 @@ inyectado_anual = 0
 retiro_buffer_anual = 0 
 condo_anual_acumulado = 0
 
-for mes in range(1, meses + 1):
-    # La tabla ahora calcula basándose en 2026
+for mes in range(0, meses):
     año_actual = YEAR_ACTUAL + (mes // 12)
     
+    # Lógica de Inflación y Mercado
     if not meta_lograda:
         precio_aparta *= (1 + (inflacion_inmueble / 12))
     
     gasto_buffer_ajustado *= (1 + (inflacion_gastos / 12))
     cuota_condo_ajustada *= (1 + (inflacion_condo / 12))
 
+    # Verificación de Meta
     if not meta_lograda and capital_actual >= (precio_aparta + liquidez_deseada):
         meta_lograda = True
         año_meta = año_actual
         st.session_state.año_meta_cache = año_meta 
-        mes_nombre_meta = MESES_NOMBRES[(mes % 12) - 1]
+        mes_nombre_meta = MESES_NOMBRES[mes % 12]
         mes_de_la_compra = mes
         costo_final_aparta = precio_aparta
         capital_actual -= precio_aparta
         capital_post_meta = capital_actual
         retiro_buffer_anual += precio_aparta
 
+    # Flujos de Efectivo
     if not meta_lograda:
         capital_actual += ahorro_mensual
         inyectado_anual += ahorro_mensual
@@ -121,12 +122,13 @@ for mes in range(1, meses + 1):
     if capital_actual <= 0 and año_agotamiento is None:
         año_agotamiento = año_actual
 
-    if mes % 12 == 0:
+    # Captura de datos anuales (incluyendo el año 0/2026)
+    if (mes + 1) % 12 == 0:
         es_retiro_status = meta_lograda and (mes - mes_de_la_compra > (años_extra_trabajo * 12))
         datos.append({
             "Año": año_actual,
             "Capital ($)": round(capital_actual) if capital_actual > 0 else 0,
-            "Precio Apt": "COMPRADO" if meta_lograda else f"{round(precio_aparta):,}",
+            "Precio Apt": "COMPRADO" if meta_lograda and año_actual >= año_meta else f"{round(precio_aparta):,}",
             "Inyectado ($)": round(inyectado_anual),
             "Retiro ($)": round(retiro_buffer_anual),
             "Condo ($)": round(condo_anual_acumulado),
@@ -175,20 +177,16 @@ año_libertad = (año_meta if año_meta else YEAR_ACTUAL) + años_extra_trabajo
 
 k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
-with k2: st.metric(f"Gasto Bianual Proyectado (Hoy)", f"${retiro_buffer_hoy:,}")
+with k2: st.metric(f"Gasto Bianual Proyectado (V. 2026)", f"${retiro_buffer_hoy:,}")
 with k3: 
     if meta_lograda: st.success(f"🎯 Aparta comprado en {mes_nombre_meta} {año_meta}")
     else: st.error("🎯 Meta No Alcanzada")
 
 if meta_lograda:
     if año_agotamiento:
-        if años_extra_trabajo > 0:
-            if inversion_extra_mensual > 0:
-                msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, seguidos de {años_extra_trabajo} años de inversión extra. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
-            else:
-                msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, posponiendo el retiro {años_extra_trabajo} año(s). El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
-        else:
-            msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}. El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+        msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, " + \
+                (f"seguidos de {años_extra_trabajo} años de inversión extra. " if inversion_extra_mensual > 0 else f"posponiendo el retiro {años_extra_trabajo} año(s). " if años_extra_trabajo > 0 else "") + \
+                f"El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
         st.warning(msg_w)
     else:
         if años_extra_trabajo > 0:
