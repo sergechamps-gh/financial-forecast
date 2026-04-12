@@ -64,7 +64,7 @@ if 'año_meta_cache' not in st.session_state:
 # 2. Sidebar - Variables principales (Estrategia de Inversión)
 with st.sidebar:
     st.header("⚙️ Variables de Inversión")
-    cap_inicial = st.number_input("Capital Inicial ($)", value=0, step=5000)
+    cap_inicial = st.number_input("Capital Inicial ($)", value=135000, step=5000)
     ahorro_mensual = st.number_input("Aporte Mensual ($)", value=100, step=100)
     rendimiento_anual = st.number_input("Rendimiento del Mercado (%)", value=10.0, step=0.5) / 100
     
@@ -73,7 +73,7 @@ with st.sidebar:
     inflacion_inmueble = st.number_input("Inflación Inmueble (%)", value=4.0, step=0.5) / 100
     
     st.subheader("🏢 Gastos de Condominio")
-    cuota_condo_hoy = st.number_input(f"Cuota mensual actual ($)", value=400, step=50)
+    cuota_condo_hoy = st.number_input(f"Cuota mensual actual ($)", value=300, step=50)
     inflacion_condo = st.number_input("Incremento anual cuota (%)", value=5.0, step=0.5) / 100
 
     st.header("🎯 Meta de Retiro")
@@ -91,7 +91,7 @@ with st.sidebar:
     año_base = st.session_state.año_meta_cache
     años_extra_trabajo = st.slider(f"Años extra de trabajo post-compra", 0, 15, 1)
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
-    inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=0, step=100)
+    inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=500, step=100)
 
 # 3. Motor de Cálculo
 meses = años_proyeccion * 12
