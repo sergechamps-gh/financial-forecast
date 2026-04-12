@@ -65,19 +65,19 @@ if 'año_meta_cache' not in st.session_state:
 with st.sidebar:
     st.header("⚙️ Variables de Inversión")
     cap_inicial = st.number_input("Capital Inicial ($)", value=0, step=5000)
-    ahorro_mensual = st.number_input("Aporte Mensual ($)", value=2000, step=100)
+    ahorro_mensual = st.number_input("Aporte Mensual ($)", value=0, step=100)
     rendimiento_anual = st.number_input("Rendimiento del Mercado (%)", value=10.0, step=0.5) / 100
     
     st.header("🏠 Precio Inmueble")
-    precio_hoy = st.number_input(f"Precio Maximo Hoy ($)", value=180000, step=5000)
+    precio_hoy = st.number_input(f"Precio Maximo Hoy ($)", value=200000, step=5000)
     inflacion_inmueble = st.number_input("Inflación Inmueble (%)", value=4.0, step=0.5) / 100
     
     st.subheader("🏢 Gastos de Condominio")
-    cuota_condo_hoy = st.number_input(f"Cuota mensual actual ($)", value=250, step=50)
+    cuota_condo_hoy = st.number_input(f"Cuota mensual actual ($)", value=400, step=50)
     inflacion_condo = st.number_input("Incremento anual cuota (%)", value=5.0, step=0.5) / 100
 
     st.header("🎯 Meta de Retiro")
-    liquidez_deseada = st.number_input("Liquidez deseada despues de la compra ($)", value=300000, step=10000)
+    liquidez_deseada = st.number_input("Liquidez deseada despues de la compra ($)", value=200000, step=10000)
     
     st.header("💸 Fase de Desembolso")
     retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual hoy {YEAR_ACTUAL} ($)", value=60000, step=5000)
