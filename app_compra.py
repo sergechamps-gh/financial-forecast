@@ -89,7 +89,7 @@ with st.sidebar:
 
     st.header("🛡️ Plan de Contingencia")
     año_base = st.session_state.año_meta_cache
-    años_extra_trabajo = st.slider(f"Años extra de trabajo post-compra", 0, 15, 1)
+    años_extra_trabajo = st.slider(f"Años extra de trabajo post-compra", 0, 20, 1)
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
     inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=500, step=100)
 
