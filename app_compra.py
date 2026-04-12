@@ -63,6 +63,9 @@ if 'año_meta_cache' not in st.session_state:
 
 # 2. Sidebar - Variables principales (Estrategia de Inversión)
 with st.sidebar:
+    st.header("👤 Perfil")
+    edad_actual = st.number_input("Tu edad actual", value=42, step=1)
+
     st.header("⚙️ Variables de Inversión")
     cap_inicial = st.number_input("Capital Inicial ($)", value=0, step=5000)
     ahorro_mensual = st.number_input("Aporte Mensual ($)", value=2000, step=100)
@@ -212,28 +215,30 @@ with col_chart:
 # 5. KPIs y Banners
 st.markdown("---")
 año_libertad = (año_meta if año_meta else YEAR_ACTUAL) + años_extra_trabajo
+edad_compra = edad_actual + (año_meta - YEAR_ACTUAL) if año_meta else 0
+edad_retiro = edad_actual + (año_libertad - YEAR_ACTUAL)
 
 k1, k2, k3 = st.columns(3)
 with k1: st.metric(f"Capital Final ({año_final_proy})", f"${df['Capital ($)'].iloc[-1]:,}")
 with k2: st.metric(f"Gasto Bianual Proyectado (Hoy 2026)", f"${retiro_buffer_hoy:,}")
 with k3: 
-    if meta_lograda: st.success(f"🎯 Aparta comprado en {mes_nombre_meta} {año_meta}")
+    if meta_lograda: st.success(f"🎯 Aparta comprado en {mes_nombre_meta} {año_meta} (Edad: {edad_compra})")
     else: st.error("🎯 Meta No Alcanzada")
 
 if meta_lograda:
     if año_agotamiento:
-        msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra en {mes_nombre_meta} {año_meta}, " + \
+        msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra a los **{edad_compra} años** ({mes_nombre_meta} {año_meta}), " + \
                 (f"seguidos de {años_extra_trabajo} años de inversión extra. " if inversion_extra_mensual > 0 else f"posponiendo el retiro {años_extra_trabajo} año(s). " if años_extra_trabajo > 0 else "") + \
-                f"El capital se agota en **{año_agotamiento}**, ajusta el plan de contingencia."
+                f"El capital se agota en **{año_agotamiento}** (Edad: {edad_actual + (año_agotamiento - YEAR_ACTUAL)}), ajusta el plan de contingencia."
         st.warning(msg_w)
     else:
         if años_extra_trabajo > 0:
             if inversion_extra_mensual > 0:
-                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro en {mes_nombre_meta} de **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
+                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado a los **{edad_compra} años** ({mes_nombre_meta} de {año_meta}). Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro a los **{edad_retiro} años** ({mes_nombre_meta} de {año_libertad}). Sostenible hasta el año **{año_final_proy}**."
             else:
-                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Se **pospone el retiro del buffer por {años_extra_trabajo} año(s)** para permitir crecimiento compuesto, iniciando el retiro en {mes_nombre_meta} de **{año_libertad}**. Sostenible hasta el año **{año_final_proy}**."
+                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado a los **{edad_compra} años** ({mes_nombre_meta} de {año_meta}). Se **pospone el retiro del buffer por {años_extra_trabajo} año(s)** para permitir crecimiento compuesto, iniciando el retiro a los **{edad_retiro} años** ({mes_nombre_meta} de {año_libertad}). Sostenible hasta el año **{año_final_proy}**."
         else:
-            msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en {mes_nombre_meta} de {año_meta}. Iniciando el retiro en **{mes_nombre_meta} de {año_meta}**. Sostenible hasta el año **{año_final_proy}**."
+            msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado a los **{edad_compra} años** ({mes_nombre_meta} de {año_meta}). Iniciando el retiro en **{mes_nombre_meta} de {año_meta}**. Sostenible hasta el año **{año_final_proy}**."
         st.info(msg_i)
 
 st.markdown("---")
