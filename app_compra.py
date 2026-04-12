@@ -13,7 +13,7 @@ st.set_page_config(page_title=f"Serge Financial Strategy v4.7.4", layout="wide")
 with st.sidebar:
     st.title("Forecast Mensual")
     with st.popover("🧮 Calculadora"):
-        tasa_cambio = st.number_input("Tipo de cambio (CRC por USD)", value=515.0, step=1.0)
+        tasa_cambio = st.number_input("Tipo de cambio (CRC por USD)", value=46.0, step=1.0)
         
         # Selector de moneda base
         moneda_calc = st.radio("Moneda base:", ["USD", "CRC"], horizontal=True)
