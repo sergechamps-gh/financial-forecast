@@ -80,7 +80,7 @@ with st.sidebar:
     liquidez_deseada = st.number_input("Liquidez deseada despues de la compra ($)", value=200000, step=10000)
     
     st.header("💸 Fase de Desembolso")
-    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual hoy {YEAR_ACTUAL} ($)", value=50000, step=5000)
+    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual hoy {YEAR_ACTUAL} ($)", value=60000, step=5000)
     inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5) / 100
     
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
