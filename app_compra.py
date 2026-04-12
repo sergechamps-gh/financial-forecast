@@ -65,7 +65,7 @@ if 'año_meta_cache' not in st.session_state:
 with st.sidebar:
     st.header("⚙️ Variables de Inversión")
     cap_inicial = st.number_input("Capital Inicial ($)", value=135000, step=5000)
-    ahorro_mensual = st.number_input("Aporte Mensual ($)", value=100, step=100)
+    ahorro_mensual = st.number_input("Aporte Mensual ($)", value=2000, step=100)
     rendimiento_anual = st.number_input("Rendimiento del Mercado (%)", value=10.0, step=0.5) / 100
     
     st.header("🏠 Precio Inmueble")
