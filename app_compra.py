@@ -7,25 +7,11 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.7.8", layout="wide")
-
-# --- CSS PARA MÓVIL (Evita que se corte en iPhone) ---
-st.markdown("""
-    <style>
-    [data-testid="stPopoverBody"] {
-        width: 100% !important;
-        min-width: 300px;
-    }
-    /* Estilo para que las métricas en móvil no se vean gigantes */
-    [data-testid="stMetricValue"] {
-        font-size: 24px !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
+st.set_page_config(page_title=f"Serge Financial Strategy v4.7.7", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS & INTERÉS COMPUESTO) ---
 with st.sidebar:
-    st.title("🧰 Herramientas")
+    st.title("🧮 Calculadoras")
     col_calcs_1, col_calcs_2 = st.columns(2)
     
     with col_calcs_1:
@@ -65,21 +51,21 @@ with st.sidebar:
     with col_calcs_2:
         with st.popover("📈 Interés"):
             st.write("📊 **Calculadora Compuesta**")
-            c_ini_c = st.number_input("Capital Inicial ($)", value=1000, step=1000, key="c_ini_tool")
-            a_men_c = st.number_input("Aporte Mensual ($)", value=500, step=100, key="a_men_tool")
-            tasa_int_c = st.number_input("Rendimiento Anual (%)", value=10.0, step=0.5, key="tasa_tool") / 100
-            t_años_c = st.number_input("Años", value=10, step=1, key="años_tool")
+            c_ini = st.number_input("Capital Inicial ($)", value=1000, step=1000)
+            a_men = st.number_input("Aporte Mensual ($)", value=500, step=100)
+            tasa_int = st.number_input("Rendimiento Anual (%)", value=10.0, step=0.5) / 100
+            t_años = st.number_input("Años", value=10, step=1)
             
             datos_int = []
-            c_temp = c_ini_c
-            for i in range(1, t_años_c + 1):
+            c_temp = c_ini
+            for i in range(1, t_años + 1):
                 for _ in range(12):
-                    c_temp += a_men_c
-                    c_temp += c_temp * (tasa_int_c / 12)
-                datos_int.append({"Año": i, "Total": f"${round(c_temp):,}"})
+                    c_temp += a_men
+                    c_temp += c_temp * (tasa_int / 12)
+                datos_int.append({"Año": i, "Total": round(c_temp)})
             
             st.dataframe(pd.DataFrame(datos_int), hide_index=True, use_container_width=True)
-            st.metric("Final", f"${round(c_temp):,}")
+            st.metric("Final", f"${c_temp:,.0f}")
 
 st.title("Dashboard: Libertad Financiera")
 
