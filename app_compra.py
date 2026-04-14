@@ -7,12 +7,11 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.7.6", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.7.7", layout="wide")
 
-# --- SECCIÓN: CALCULADORAS (FORECAST & INTERÉS COMPUESTO) ---
+# --- SECCIÓN: HERRAMIENTAS (GASTOS & INTERÉS COMPUESTO) ---
 with st.sidebar:
     st.title("🧰 Herramientas")
-    
     col_calcs_1, col_calcs_2 = st.columns(2)
     
     with col_calcs_1:
@@ -38,12 +37,16 @@ with st.sidebar:
             
             if moneda_calc == "CRC":
                 m_usd = total_m / tasa_cambio
+                a_usd = total_a / tasa_cambio
                 st.metric("Total Mensual", f"₡{total_m:,.0f}")
                 st.caption(f"Equivale a: ${m_usd:,.2f} USD")
+                st.caption(f"Total Anual: ₡{total_a:,.0f} / ${a_usd:,.2f} USD")
             else:
                 m_crc = total_m * tasa_cambio
+                a_crc = total_a * tasa_cambio
                 st.metric("Total Mensual", f"${total_m:,.2f}")
                 st.caption(f"Equivale a: ₡{m_crc:,.0f} CRC")
+                st.caption(f"Total Anual: ${total_a:,.2f} / ₡{a_crc:,.0f} CRC")
 
     with col_calcs_2:
         with st.popover("📈 Interés"):
@@ -53,7 +56,6 @@ with st.sidebar:
             tasa_int = st.number_input("Rendimiento Anual (%)", value=10.0, step=0.5) / 100
             t_años = st.number_input("Años", value=10, step=1)
             
-            # Cálculo rápido año a año
             datos_int = []
             c_temp = c_ini
             for i in range(1, t_años + 1):
@@ -62,8 +64,7 @@ with st.sidebar:
                     c_temp += c_temp * (tasa_int / 12)
                 datos_int.append({"Año": i, "Total": round(c_temp)})
             
-            df_int = pd.DataFrame(datos_int)
-            st.dataframe(df_int, hide_index=True, use_container_width=True)
+            st.dataframe(pd.DataFrame(datos_int), hide_index=True, use_container_width=True)
             st.metric("Final", f"${c_temp:,.0f}")
 
 st.title("Dashboard: Libertad Financiera")
