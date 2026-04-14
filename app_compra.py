@@ -7,51 +7,64 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.7.4", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.7.6", layout="wide")
 
-# --- SECCIÓN: FORECAST MENSUAL & CALCULADORA ---
+# --- SECCIÓN: CALCULADORAS (FORECAST & INTERÉS COMPUESTO) ---
 with st.sidebar:
-    st.title("Forecast Mensual")
-    with st.popover("🧮 Calculadora"):
-        tasa_cambio = st.number_input("Tipo de cambio (CRC por USD)", value=460.0, step=1.0)
-        
-        # Selector de moneda base
-        moneda_calc = st.radio("Moneda base:", ["USD", "CRC"], horizontal=True)
-        
-        # Lógica de incrementos y símbolos (Nuevos steps: $10 / ₡5,000)
-        step_val = 10.0 if moneda_calc == "USD" else 5000.0
-        simbolo = "$" if moneda_calc == "USD" else "₡"
-        
-        st.divider()
-        st.write(f"📊 **Gastos en {moneda_calc}**")
-        
-        g_diario = st.number_input(f"Diario/Comida ({simbolo})", value=0.0, step=step_val)
-        
-        st.write("**Servicios & HOA**")
-        g_luz = st.number_input(f"Luz ({simbolo})", value=0.0, step=step_val)
-        g_agua = st.number_input(f"Agua ({simbolo})", value=0.0, step=step_val)
-        g_internet = st.number_input(f"Internet ({simbolo})", value=0.0, step=step_val)
-        g_cel = st.number_input(f"Celular ({simbolo})", value=0.0, step=step_val)
-        g_hoa = st.number_input(f"HOA ({simbolo})", value=0.0, step=step_val)
-        
-        g_diversion = st.number_input(f"Diversión ({simbolo})", value=0.0, step=step_val)
-        
-        # Suma total
-        total_m = g_diario + g_luz + g_agua + g_internet + g_cel + g_hoa + g_diversion
-        total_a = total_m * 12
-        
-        if moneda_calc == "CRC":
-            m_usd = total_m / tasa_cambio
-            a_usd = total_a / tasa_cambio
-            st.metric("Total Mensual", f"₡{total_m:,.0f}")
-            st.caption(f"Equivale a: ${m_usd:,.2f} USD")
-            st.caption(f"Total Anual: ₡{total_a:,.0f} / ${a_usd:,.2f} USD")
-        else:
-            m_crc = total_m * tasa_cambio
-            a_crc = total_a * tasa_cambio
-            st.metric("Total Mensual", f"${total_m:,.2f}")
-            st.caption(f"Equivale a: ₡{m_crc:,.0f} CRC")
-            st.caption(f"Total Anual: ${total_a:,.2f} / ₡{a_crc:,.0f} CRC")
+    st.title("🧰 Herramientas")
+    
+    col_calcs_1, col_calcs_2 = st.columns(2)
+    
+    with col_calcs_1:
+        with st.popover("💰 Gastos"):
+            tasa_cambio = st.number_input("Tipo de cambio (CRC por USD)", value=460.0, step=1.0)
+            moneda_calc = st.radio("Moneda base:", ["USD", "CRC"], horizontal=True)
+            step_val = 10.0 if moneda_calc == "USD" else 5000.0
+            simbolo = "$" if moneda_calc == "USD" else "₡"
+            
+            st.divider()
+            st.write(f"📊 **Gastos en {moneda_calc}**")
+            g_diario = st.number_input(f"Diario/Comida ({simbolo})", value=0.0, step=step_val)
+            st.write("**Servicios & HOA**")
+            g_luz = st.number_input(f"Luz ({simbolo})", value=0.0, step=step_val)
+            g_agua = st.number_input(f"Agua ({simbolo})", value=0.0, step=step_val)
+            g_internet = st.number_input(f"Internet ({simbolo})", value=0.0, step=step_val)
+            g_cel = st.number_input(f"Celular ({simbolo})", value=0.0, step=step_val)
+            g_hoa = st.number_input(f"HOA ({simbolo})", value=0.0, step=step_val)
+            g_diversion = st.number_input(f"Diversión ({simbolo})", value=0.0, step=step_val)
+            
+            total_m = g_diario + g_luz + g_agua + g_internet + g_cel + g_hoa + g_diversion
+            total_a = total_m * 12
+            
+            if moneda_calc == "CRC":
+                m_usd = total_m / tasa_cambio
+                st.metric("Total Mensual", f"₡{total_m:,.0f}")
+                st.caption(f"Equivale a: ${m_usd:,.2f} USD")
+            else:
+                m_crc = total_m * tasa_cambio
+                st.metric("Total Mensual", f"${total_m:,.2f}")
+                st.caption(f"Equivale a: ₡{m_crc:,.0f} CRC")
+
+    with col_calcs_2:
+        with st.popover("📈 Interés"):
+            st.write("📊 **Calculadora Compuesta**")
+            c_ini = st.number_input("Capital Inicial ($)", value=1000, step=1000)
+            a_men = st.number_input("Aporte Mensual ($)", value=500, step=100)
+            tasa_int = st.number_input("Rendimiento Anual (%)", value=10.0, step=0.5) / 100
+            t_años = st.number_input("Años", value=10, step=1)
+            
+            # Cálculo rápido año a año
+            datos_int = []
+            c_temp = c_ini
+            for i in range(1, t_años + 1):
+                for _ in range(12):
+                    c_temp += a_men
+                    c_temp += c_temp * (tasa_int / 12)
+                datos_int.append({"Año": i, "Total": round(c_temp)})
+            
+            df_int = pd.DataFrame(datos_int)
+            st.dataframe(df_int, hide_index=True, use_container_width=True)
+            st.metric("Final", f"${c_temp:,.0f}")
 
 st.title("Dashboard: Libertad Financiera")
 
@@ -61,14 +74,14 @@ MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
 if 'año_meta_cache' not in st.session_state:
     st.session_state.año_meta_cache = YEAR_ACTUAL + 5
 
-# 2. Sidebar - Variables principales (Estrategia de Inversión)
+# 2. Sidebar - Variables principales
 with st.sidebar:
     st.header("👤 Perfil")
     edad_actual = st.number_input("Tu edad actual", value=42, step=1)
 
     st.header("⚙️ Variables de Inversión")
-    cap_inicial = st.number_input("Capital Inicial ($)", value=0, step=5000)
-    ahorro_mensual = st.number_input("Aporte Mensual ($)", value=2000, step=100)
+    cap_inicial = st.number_input("Capital Inicial Principal ($)", value=0, step=5000)
+    ahorro_mensual = st.number_input("Aporte Mensual Principal ($)", value=2000, step=100)
     rendimiento_anual = st.number_input("Rendimiento del Mercado (%)", value=10.0, step=0.5) / 100
     
     st.header("🏠 Precio Inmueble")
