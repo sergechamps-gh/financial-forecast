@@ -11,7 +11,7 @@ st.set_page_config(page_title=f"Serge Financial Strategy v4.7.7", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS & INTERÉS COMPUESTO) ---
 with st.sidebar:
-    st.title("🧰 Herramientas")
+    st.title("🧮 Calculadoras")
     col_calcs_1, col_calcs_2 = st.columns(2)
     
     with col_calcs_1:
