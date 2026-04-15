@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.9.1", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.9.2", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS, INTERÉS & INFLACIÓN) ---
 with st.sidebar:
@@ -56,11 +56,11 @@ with st.sidebar:
                 c_temp += c_temp * (tasa_int_c / 12)
             st.metric("Monto Final", f"${c_temp:,.0f}")
 
-    # --- CALCULADORA: INFLACIÓN POR AÑO SELECCIONADO ---
+    # --- CALCULADORA: INFLACIÓN (UPDATE STEPS) ---
     with st.popover("🎈 Inflación", use_container_width=True):
         st.write("📊 **Comparador de Años**")
-        monto_infla = st.number_input("Monto a comparar ($)", value=1000.0, step=100.0, min_value=0.0)
-        tasa_infla = st.number_input("Inflación anual (%)", value=3.0, step=0.1, min_value=0.0) / 100
+        monto_infla = st.number_input("Monto a comparar ($)", value=200000.0, step=5000.0, min_value=0.0)
+        tasa_infla = st.number_input("Inflación anual (%)", value=3.0, step=0.25, min_value=0.0) / 100
         
         año_origen = st.number_input("Del año:", value=YEAR_ACTUAL, step=1)
         año_destino = st.number_input("Al año:", value=YEAR_ACTUAL + 10, step=1)
@@ -123,7 +123,7 @@ with st.sidebar:
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
     inversion_extra_mensual = st.number_input("Inversion extra post-compra ($)", value=500, step=100, min_value=0)
 
-# 3. Motor de Cálculo (Lógica de v4.8.1)
+# 3. Motor de Cálculo
 meses = años_proyeccion * 12
 datos = []
 capital_actual = float(cap_inicial)
