@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.9.4", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.9.5", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS, INTERÉS & INFLACIÓN) ---
 with st.sidebar:
@@ -39,11 +39,15 @@ with st.sidebar:
             if moneda_calc == "CRC":
                 st.metric("Mensual", f"₡{total_m:,.0f}")
                 st.metric("Anual", f"₡{total_a:,.0f}")
-                st.caption(f"Anual en USD: ${total_a/tasa_cambio:,.2f}" if tasa_cambio > 0 else "")
+                # Conversión cruzada en el pie
+                anual_usd = total_a / tasa_cambio if tasa_cambio > 0 else 0
+                st.caption(f"Equivalente Anual: ${anual_usd:,.2f} USD | ₡{total_a:,.0f} CRC")
             else:
                 st.metric("Mensual", f"${total_m:,.2f}")
                 st.metric("Anual", f"${total_a:,.2f}")
-                st.caption(f"Anual en CRC: ₡{total_a*tasa_cambio:,.0f}")
+                # Conversión cruzada en el pie
+                anual_crc = total_a * tasa_cambio
+                st.caption(f"Equivalente Anual: ₡{anual_crc:,.0f} CRC | ${total_a:,.2f} USD")
 
     with col_r1_right:
         with st.popover("📈 Interés", use_container_width=True):
@@ -78,7 +82,7 @@ with st.sidebar:
     with col_r2_right:
         st.empty()
 
-# --- EL RESTO DEL DASHBOARD SIGUE IGUAL (Lógica Principal) ---
+# --- DASHBOARD PRINCIPAL ---
 st.title("Dashboard: Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -121,7 +125,7 @@ with st.sidebar:
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
     inversion_extra_mensual = st.number_input("Inversion extra post-compra ($)", value=500, step=100, min_value=0)
 
-# Motor de Cálculo
+# Motor de Cálculo (Manteniendo lógica de v4.9.4)
 meses = años_proyeccion * 12
 datos = []
 capital_actual = float(cap_inicial)
@@ -253,7 +257,7 @@ with k3:
 if meta_lograda:
     if año_agotamiento:
         años_duracion = año_agotamiento - año_libertad
-        msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra a los **{edad_compra} años**, el capital dura **{años_duracion} años** y se agota en **{año_agotamiento}**."
+        msg_w = f"⚠️ **Alerta:** Después de comprar a los **{edad_compra} años**, el capital dura **{años_duracion} años**."
         st.warning(msg_w)
     else:
         st.info(f"🚀 **Libertad Financiera Lograda:** Apartamento comprado a los **{edad_compra} años**.")
