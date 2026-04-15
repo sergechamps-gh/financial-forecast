@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.8.0", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.8.1", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS & INTERÉS COMPUESTO) ---
 with st.sidebar:
@@ -75,7 +75,7 @@ MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
 if 'año_meta_cache' not in st.session_state:
     st.session_state.año_meta_cache = YEAR_ACTUAL + 5
 
-# 2. Sidebar - Variables principales con validación min_value=0
+# 2. Sidebar - Variables principales
 with st.sidebar:
     st.header("👤 Perfil")
     edad_actual = st.number_input("Tu edad actual", value=42, step=1, min_value=1, max_value=100)
@@ -243,9 +243,11 @@ with k3:
 
 if meta_lograda:
     if año_agotamiento:
+        # Lógica para calcular cuánto duró el capital después de dejar de trabajar
+        años_duracion = año_agotamiento - año_libertad
         msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra a los **{edad_compra} años** ({mes_nombre_meta} {año_meta}), " + \
                 (f"seguidos de {años_extra_trabajo} años de inversión extra. " if inversion_extra_mensual > 0 else f"posponiendo el retiro {años_extra_trabajo} año(s). " if años_extra_trabajo > 0 else "") + \
-                f"El capital se agota en **{año_agotamiento}** (Edad: {edad_actual + (año_agotamiento - YEAR_ACTUAL)}), ajusta el plan de contingencia."
+                f"El capital dura **{años_duracion} años** y se agota en **{año_agotamiento}** (Edad: {edad_actual + (año_agotamiento - YEAR_ACTUAL)}), ajusta el plan de contingencia."
         st.warning(msg_w)
     else:
         if años_extra_trabajo > 0:
@@ -263,13 +265,11 @@ m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apa
 m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
 m3.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏁 Capital Post-Laboral ({año_libertad})</p><p style='font-size:24px; color:#1E90FF; font-weight:bold; margin-top:0px;'>${capital_post_laboral:,.0f}</p>", unsafe_allow_html=True)
 
-# 6. Auditoría con protección de división por cero
+# 6. Auditoría
 st.markdown("---")
 st.markdown("### 📊 Rendimiento del Plan de Inversión")
 c1, c2, c3 = st.columns(3)
 c1.metric("Total Inyectado", f"${round(total_ahorro_propio):,}")
 c2.metric("Intereses Acumulados", f"${round(total_intereses_generados):,}")
-
-# Fix: Protección contra ZeroDivisionError
 multiplicador = round(total_intereses_generados / total_ahorro_propio, 2) if total_ahorro_propio > 0 else 0.0
 c3.metric("Multiplicador", f"{multiplicador}x")
