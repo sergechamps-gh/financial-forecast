@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.7.7", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.8.1", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS & INTERÉS COMPUESTO) ---
 with st.sidebar:
@@ -16,28 +16,28 @@ with st.sidebar:
     
     with col_calcs_1:
         with st.popover("💰 Gastos"):
-            tasa_cambio = st.number_input("Tipo de cambio (CRC por USD)", value=460.0, step=1.0)
+            tasa_cambio = st.number_input("Tipo de cambio (CRC por USD)", value=460.0, step=1.0, min_value=0.0)
             moneda_calc = st.radio("Moneda base:", ["USD", "CRC"], horizontal=True)
             step_val = 10.0 if moneda_calc == "USD" else 5000.0
             simbolo = "$" if moneda_calc == "USD" else "₡"
             
             st.divider()
             st.write(f"📊 **Gastos en {moneda_calc}**")
-            g_diario = st.number_input(f"Diario/Comida ({simbolo})", value=0.0, step=step_val)
+            g_diario = st.number_input(f"Diario/Comida ({simbolo})", value=0.0, step=step_val, min_value=0.0)
             st.write("**Servicios & HOA**")
-            g_luz = st.number_input(f"Luz ({simbolo})", value=0.0, step=step_val)
-            g_agua = st.number_input(f"Agua ({simbolo})", value=0.0, step=step_val)
-            g_internet = st.number_input(f"Internet ({simbolo})", value=0.0, step=step_val)
-            g_cel = st.number_input(f"Celular ({simbolo})", value=0.0, step=step_val)
-            g_hoa = st.number_input(f"HOA ({simbolo})", value=0.0, step=step_val)
-            g_diversion = st.number_input(f"Diversión ({simbolo})", value=0.0, step=step_val)
+            g_luz = st.number_input(f"Luz ({simbolo})", value=0.0, step=step_val, min_value=0.0)
+            g_agua = st.number_input(f"Agua ({simbolo})", value=0.0, step=step_val, min_value=0.0)
+            g_internet = st.number_input(f"Internet ({simbolo})", value=0.0, step=step_val, min_value=0.0)
+            g_cel = st.number_input(f"Celular ({simbolo})", value=0.0, step=step_val, min_value=0.0)
+            g_hoa = st.number_input(f"HOA ({simbolo})", value=0.0, step=step_val, min_value=0.0)
+            g_diversion = st.number_input(f"Diversión ({simbolo})", value=0.0, step=step_val, min_value=0.0)
             
             total_m = g_diario + g_luz + g_agua + g_internet + g_cel + g_hoa + g_diversion
             total_a = total_m * 12
             
             if moneda_calc == "CRC":
-                m_usd = total_m / tasa_cambio
-                a_usd = total_a / tasa_cambio
+                m_usd = total_m / tasa_cambio if tasa_cambio > 0 else 0
+                a_usd = total_a / tasa_cambio if tasa_cambio > 0 else 0
                 st.metric("Total Mensual", f"₡{total_m:,.0f}")
                 st.caption(f"Equivale a: ${m_usd:,.2f} USD")
                 st.caption(f"Total Anual: ₡{total_a:,.0f} / ${a_usd:,.2f} USD")
@@ -51,17 +51,17 @@ with st.sidebar:
     with col_calcs_2:
         with st.popover("📈 Interés"):
             st.write("📊 **Calculadora Compuesta**")
-            c_ini = st.number_input("Capital Inicial ($)", value=1000, step=1000)
-            a_men = st.number_input("Aporte Mensual ($)", value=500, step=100)
-            tasa_int = st.number_input("Rendimiento Anual (%)", value=10.0, step=0.5) / 100
-            t_años = st.number_input("Años", value=10, step=1)
+            c_ini_c = st.number_input("Capital Inicial ($)", value=1000, step=1000, min_value=0)
+            a_men_c = st.number_input("Aporte Mensual ($)", value=500, step=100, min_value=0)
+            tasa_int_c = st.number_input("Rendimiento Anual (%)", value=10.0, step=0.5, min_value=0.0) / 100
+            t_años_c = st.number_input("Años", value=10, step=1, min_value=1)
             
             datos_int = []
-            c_temp = c_ini
-            for i in range(1, t_años + 1):
+            c_temp = c_ini_c
+            for i in range(1, t_años_c + 1):
                 for _ in range(12):
-                    c_temp += a_men
-                    c_temp += c_temp * (tasa_int / 12)
+                    c_temp += a_men_c
+                    c_temp += c_temp * (tasa_int_c / 12)
                 datos_int.append({"Año": i, "Total": round(c_temp)})
             
             st.dataframe(pd.DataFrame(datos_int), hide_index=True, use_container_width=True)
@@ -78,27 +78,27 @@ if 'año_meta_cache' not in st.session_state:
 # 2. Sidebar - Variables principales
 with st.sidebar:
     st.header("👤 Perfil")
-    edad_actual = st.number_input("Tu edad actual", value=42, step=1)
+    edad_actual = st.number_input("Tu edad actual", value=42, step=1, min_value=1, max_value=100)
 
     st.header("⚙️ Variables de Inversión")
-    cap_inicial = st.number_input("Capital Inicial Principal ($)", value=0, step=5000)
-    ahorro_mensual = st.number_input("Aporte Mensual Principal ($)", value=2000, step=100)
-    rendimiento_anual = st.number_input("Rendimiento del Mercado (%)", value=10.0, step=0.5) / 100
+    cap_inicial = st.number_input("Capital Inicial Principal ($)", value=0, step=5000, min_value=0)
+    ahorro_mensual = st.number_input("Aporte Mensual Principal ($)", value=2000, step=100, min_value=0)
+    rendimiento_anual = st.number_input("Rendimiento del Mercado (%)", value=10.0, step=0.5, min_value=0.0) / 100
     
     st.header("🏠 Precio Inmueble")
-    precio_hoy = st.number_input(f"Precio Maximo Hoy ($)", value=200000, step=5000)
-    inflacion_inmueble = st.number_input("Inflación Inmueble (%)", value=4.0, step=0.5) / 100
+    precio_hoy = st.number_input(f"Precio Maximo Hoy ($)", value=200000, step=5000, min_value=0)
+    inflacion_inmueble = st.number_input("Inflación Inmueble (%)", value=4.0, step=0.5, min_value=0.0) / 100
     
     st.subheader("🏢 Gastos de Condominio")
-    cuota_condo_hoy = st.number_input(f"Cuota mensual actual ($)", value=300, step=50)
-    inflacion_condo = st.number_input("Incremento anual cuota (%)", value=5.0, step=0.5) / 100
+    cuota_condo_hoy = st.number_input(f"Cuota mensual actual ($)", value=300, step=50, min_value=0)
+    inflacion_condo = st.number_input("Incremento anual cuota (%)", value=5.0, step=0.5, min_value=0.0) / 100
 
     st.header("🎯 Meta de Retiro")
-    liquidez_deseada = st.number_input("Liquidez deseada despues de la compra ($)", value=200000, step=10000)
+    liquidez_deseada = st.number_input("Liquidez deseada despues de la compra ($)", value=200000, step=10000, min_value=0)
     
     st.header("💸 Fase de Desembolso")
-    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual hoy {YEAR_ACTUAL} ($)", value=60000, step=5000)
-    inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5) / 100
+    retiro_buffer_hoy = st.number_input(f"Monto del gasto bianual hoy {YEAR_ACTUAL} ($)", value=60000, step=5000, min_value=0)
+    inflacion_gastos = st.number_input("Inflación de gastos (%)", value=3.0, step=0.5, min_value=0.0) / 100
     
     años_proyeccion = st.slider("Cantidad de años de proyección total", 10, 80, 60)
     año_final_proy = YEAR_ACTUAL + años_proyeccion
@@ -108,29 +108,29 @@ with st.sidebar:
     año_base = st.session_state.año_meta_cache
     años_extra_trabajo = st.slider(f"Años extra de trabajo post-compra", 0, 20, 1)
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
-    inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=500, step=100)
+    inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=500, step=100, min_value=0)
 
 # 3. Motor de Cálculo
 meses = años_proyeccion * 12
 datos = []
-capital_actual = cap_inicial
-precio_aparta = precio_hoy
+capital_actual = float(cap_inicial)
+precio_aparta = float(precio_hoy)
 meta_lograda = False
 año_meta = None
 mes_nombre_meta = ""
 mes_de_la_compra = -1
-gasto_buffer_ajustado = retiro_buffer_hoy 
-cuota_condo_ajustada = cuota_condo_hoy
+gasto_buffer_ajustado = float(retiro_buffer_hoy)
+cuota_condo_ajustada = float(cuota_condo_hoy)
 año_agotamiento = None
-costo_final_aparta = 0
-capital_post_meta = 0
-capital_post_laboral = 0 
+costo_final_aparta = 0.0
+capital_post_meta = 0.0
+capital_post_laboral = 0.0
 
-total_ahorro_propio = cap_inicial
-total_intereses_generados = 0
-inyectado_anual = 0
-retiro_buffer_anual = 0 
-condo_anual_acumulado = 0
+total_ahorro_propio = float(cap_inicial)
+total_intereses_generados = 0.0
+inyectado_anual = 0.0
+retiro_buffer_anual = 0.0 
+condo_anual_acumulado = 0.0
 
 for mes in range(0, meses):
     año_actual = YEAR_ACTUAL + (mes // 12)
@@ -155,10 +155,9 @@ for mes in range(0, meses):
         inyectado_anual += ahorro_mensual
         total_ahorro_propio += ahorro_mensual
     else:
-        capital_actual -= cuota_condo_ajustada
-        condo_anual_acumulado += cuota_condo_ajustada
         meses_desde_compra = mes - mes_de_la_compra
         es_periodo_extra = meses_desde_compra <= (años_extra_trabajo * 12)
+        
         if es_periodo_extra:
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
@@ -166,6 +165,9 @@ for mes in range(0, meses):
             if meses_desde_compra == (años_extra_trabajo * 12):
                 capital_post_laboral = capital_actual
         else:
+            capital_actual -= cuota_condo_ajustada
+            condo_anual_acumulado += cuota_condo_ajustada
+            
             meses_post_trabajo = meses_desde_compra - (años_extra_trabajo * 12)
             if meses_post_trabajo == 1 or (meses_post_trabajo > 1 and meses_post_trabajo % 24 == 0):
                 capital_actual -= gasto_buffer_ajustado
@@ -191,7 +193,7 @@ for mes in range(0, meses):
             "Gasto_Vida_Graf": round(gasto_buffer_ajustado),
             "Status": "Retiro 🌴" if es_retiro_status else "Activo 💼"
         })
-        inyectado_anual = 0; retiro_buffer_anual = 0; condo_anual_acumulado = 0
+        inyectado_anual = 0.0; retiro_buffer_anual = 0.0; condo_anual_acumulado = 0.0
 
 if años_extra_trabajo == 0:
     capital_post_laboral = capital_post_meta
@@ -241,9 +243,11 @@ with k3:
 
 if meta_lograda:
     if año_agotamiento:
+        # Lógica para calcular cuánto duró el capital después de dejar de trabajar
+        años_duracion = año_agotamiento - año_libertad
         msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra a los **{edad_compra} años** ({mes_nombre_meta} {año_meta}), " + \
                 (f"seguidos de {años_extra_trabajo} años de inversión extra. " if inversion_extra_mensual > 0 else f"posponiendo el retiro {años_extra_trabajo} año(s). " if años_extra_trabajo > 0 else "") + \
-                f"El capital se agota en **{año_agotamiento}** (Edad: {edad_actual + (año_agotamiento - YEAR_ACTUAL)}), ajusta el plan de contingencia."
+                f"El capital dura **{años_duracion} años** y se agota en **{año_agotamiento}** (Edad: {edad_actual + (año_agotamiento - YEAR_ACTUAL)}), ajusta el plan de contingencia."
         st.warning(msg_w)
     else:
         if años_extra_trabajo > 0:
@@ -267,4 +271,5 @@ st.markdown("### 📊 Rendimiento del Plan de Inversión")
 c1, c2, c3 = st.columns(3)
 c1.metric("Total Inyectado", f"${round(total_ahorro_propio):,}")
 c2.metric("Intereses Acumulados", f"${round(total_intereses_generados):,}")
-c3.metric("Multiplicador", f"{round(total_intereses_generados / total_ahorro_propio, 2)}x")
+multiplicador = round(total_intereses_generados / total_ahorro_propio, 2) if total_ahorro_propio > 0 else 0.0
+c3.metric("Multiplicador", f"{multiplicador}x")
