@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.9.8", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.9.9", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS, INTERÉS & INFLACIÓN) ---
 with st.sidebar:
@@ -89,6 +89,7 @@ if 'año_meta_cache' not in st.session_state:
 
 with st.sidebar:
     st.header("👤 Perfil")
+    # Mantenemos valor por defecto 0 para omitir edad
     edad_actual = st.number_input("Tu edad actual (0 para omitir)", value=0, step=1, min_value=0, max_value=100)
 
     st.header("⚙️ Variables de Inversión")
@@ -257,6 +258,7 @@ with k3:
 
 if meta_lograda:
     if año_agotamiento:
+        # Banners Amarillos (Warning) quedan igual que v4.9.8
         años_duracion = año_agotamiento - año_libertad
         edad_agotamiento_txt = f" (Edad: {edad_actual + (año_agotamiento - YEAR_ACTUAL)})" if edad_actual > 0 else ""
         
@@ -265,13 +267,16 @@ if meta_lograda:
                 f"El capital dura **{años_duracion} años** y se agota en **{año_agotamiento}**{edad_agotamiento_txt}, ajusta el plan de contingencia."
         st.warning(msg_w)
     else:
+        # --- BANNERS AZULES (INFO) - SE AGREGA LA EDAD AL FINAL SI edad_actual > 0 ---
+        edad_final_txt = f" (Edad: {edad_actual + (año_final_proy - YEAR_ACTUAL)})" if edad_actual > 0 else ""
+        
         if años_extra_trabajo > 0:
             if inversion_extra_mensual > 0:
-                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en **{mes_nombre_meta} de {año_meta}**{txt_edad_compra}. Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro en **{mes_nombre_meta} de {año_libertad}**{txt_edad_retiro}. Sostenible hasta el año **{año_final_proy}**."
+                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en **{mes_nombre_meta} de {año_meta}**{txt_edad_compra}. Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro en **{mes_nombre_meta} de {año_libertad}**{txt_edad_retiro}. Sostenible hasta el año **{año_final_proy}**{edad_final_txt}."
             else:
-                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en **{mes_nombre_meta} de {año_meta}**{txt_edad_compra}. Se **pospone el retiro del buffer por {años_extra_trabajo} año(s)** para permitir crecimiento compuesto, iniciando el retiro en **{mes_nombre_meta} de {año_libertad}**{txt_edad_retiro}. Sostenible hasta el año **{año_final_proy}**."
+                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en **{mes_nombre_meta} de {año_meta}**{txt_edad_compra}. Se **pospone el retiro del buffer por {años_extra_trabajo} año(s)** para permitir crecimiento compuesto, iniciando el retiro en **{mes_nombre_meta} de {año_libertad}**{txt_edad_retiro}. Sostenible hasta el año **{año_final_proy}**{edad_final_txt}."
         else:
-            msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en **{mes_nombre_meta} de {año_meta}**{txt_edad_compra}. Iniciando el retiro en **{mes_nombre_meta} de {año_meta}**. Sostenible hasta el año **{año_final_proy}**."
+            msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado en **{mes_nombre_meta} de {año_meta}**{txt_edad_compra}. Iniciando el retiro en **{mes_nombre_meta} de {año_meta}**. Sostenible hasta el año **{año_final_proy}**{edad_final_txt}."
         st.info(msg_i)
 
 st.markdown("---")
