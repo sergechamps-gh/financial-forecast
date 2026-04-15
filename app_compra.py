@@ -7,15 +7,13 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.9.3", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.9.4", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS, INTERÉS & INFLACIÓN) ---
 with st.sidebar:
     st.title("🧮 Calculadoras")
     
-    # Fila 1
     col_r1_left, col_r1_right = st.columns(2)
-    # Fila 2 (Para Inflación y el espacio futuro)
     col_r2_left, col_r2_right = st.columns(2)
     
     with col_r1_left:
@@ -26,66 +24,61 @@ with st.sidebar:
             simbolo = "$" if moneda_calc == "USD" else "₡"
             
             st.divider()
-            st.write(f"📊 **Gastos en {moneda_calc}**")
-            g_diario = st.number_input(f"Diario/Comida ({simbolo})", value=0.0, step=step_val, min_value=0.0)
-            st.write("**Servicios & HOA**")
-            g_luz = st.number_input(f"Luz ({simbolo})", value=0.0, step=step_val, min_value=0.0)
-            g_agua = st.number_input(f"Agua ({simbolo})", value=0.0, step=step_val, min_value=0.0)
-            g_internet = st.number_input(f"Internet ({simbolo})", value=0.0, step=step_val, min_value=0.0)
-            g_cel = st.number_input(f"Celular ({simbolo})", value=0.0, step=step_val, min_value=0.0)
-            g_hoa = st.number_input(f"HOA ({simbolo})", value=0.0, step=step_val, min_value=0.0)
-            g_diversion = st.number_input(f"Diversión ({simbolo})", value=0.0, step=step_val, min_value=0.0)
+            g_diario = st.number_input(f"Diario/Comida ({simbolo})", value=0.0, step=step_val)
+            g_luz = st.number_input(f"Luz ({simbolo})", value=0.0, step=step_val)
+            g_agua = st.number_input(f"Agua ({simbolo})", value=0.0, step=step_val)
+            g_internet = st.number_input(f"Internet ({simbolo})", value=0.0, step=step_val)
+            g_cel = st.number_input(f"Celular ({simbolo})", value=0.0, step=step_val)
+            g_hoa = st.number_input(f"HOA ({simbolo})", value=0.0, step=step_val)
+            g_diversion = st.number_input(f"Diversión ({simbolo})", value=0.0, step=step_val)
             
             total_m = g_diario + g_luz + g_agua + g_internet + g_cel + g_hoa + g_diversion
+            total_a = total_m * 12
+            
+            st.divider()
             if moneda_calc == "CRC":
-                m_usd = total_m / tasa_cambio if tasa_cambio > 0 else 0
-                st.metric("Total Mensual", f"₡{total_m:,.0f}")
-                st.caption(f"Equivale a: ${m_usd:,.2f} USD")
+                st.metric("Mensual", f"₡{total_m:,.0f}")
+                st.metric("Anual", f"₡{total_a:,.0f}")
+                st.caption(f"Anual en USD: ${total_a/tasa_cambio:,.2f}" if tasa_cambio > 0 else "")
             else:
-                m_crc = total_m * tasa_cambio
-                st.metric("Total Mensual", f"${total_m:,.2f}")
-                st.caption(f"Equivale a: ₡{m_crc:,.0f} CRC")
+                st.metric("Mensual", f"${total_m:,.2f}")
+                st.metric("Anual", f"${total_a:,.2f}")
+                st.caption(f"Anual en CRC: ₡{total_a*tasa_cambio:,.0f}")
 
     with col_r1_right:
         with st.popover("📈 Interés", use_container_width=True):
-            st.write("📊 **Calculadora Compuesta**")
-            c_ini_c = st.number_input("Capital Inicial ($)", value=1000, step=1000, min_value=0)
-            a_men_c = st.number_input("Aporte Mensual ($)", value=500, step=100, min_value=0)
-            tasa_int_c = st.number_input("Rendimiento Anual (%)", value=10.0, step=0.5, min_value=0.0) / 100
+            c_ini_c = st.number_input("Inicial ($)", value=1000, step=1000)
+            a_men_c = st.number_input("Mensual ($)", value=500, step=100)
+            tasa_int_c = st.number_input("Rendimiento (%)", value=10.0, step=0.5) / 100
             t_años_c = st.number_input("Años", value=10, step=1, min_value=1)
             
-            c_temp = c_ini_c
-            for _ in range(t_años_c * 12):
-                c_temp += a_men_c
-                c_temp += c_temp * (tasa_int_c / 12)
-            st.metric("Monto Final", f"${c_temp:,.0f}")
+            datos_int = []
+            c_temp = float(c_ini_c)
+            for a in range(1, t_años_c + 1):
+                for _ in range(12):
+                    c_temp += a_men_c
+                    c_temp += c_temp * (tasa_int_c / 12)
+                datos_int.append({"Año": a, "Capital": round(c_temp)})
+            
+            st.metric("Final", f"${c_temp:,.0f}")
+            st.dataframe(pd.DataFrame(datos_int), hide_index=True, use_container_width=True)
 
     with col_r2_left:
         with st.popover("🎈 Inflación", use_container_width=True):
-            st.write("📊 **Comparador de Años**")
-            monto_infla = st.number_input("Monto a comparar ($)", value=200000.0, step=5000.0, min_value=0.0)
-            tasa_infla = st.number_input("Inflación anual (%)", value=3.0, step=0.25, min_value=0.0) / 100
+            monto_infla = st.number_input("Monto ($)", value=200000.0, step=5000.0)
+            tasa_infla = st.number_input("Inflación (%)", value=3.0, step=0.25) / 100
+            a_orig = st.number_input("De:", value=YEAR_ACTUAL, step=1)
+            a_dest = st.number_input("A:", value=YEAR_ACTUAL + 10, step=1)
             
-            año_origen = st.number_input("Del año:", value=YEAR_ACTUAL, step=1)
-            año_destino = st.number_input("Al año:", value=YEAR_ACTUAL + 10, step=1)
-            
-            diff_years = año_destino - año_origen
-            monto_resultado = monto_infla * ((1 + tasa_infla) ** diff_years)
-            
+            res = monto_infla * ((1 + tasa_infla) ** (a_dest - a_orig))
             st.divider()
-            if diff_years > 0:
-                st.write(f"En **{año_destino}**, necesitarás:")
-                st.subheader(f"${monto_resultado:,.2f}")
-            elif diff_years < 0:
-                st.write(f"En **{año_destino}**, equivalía a:")
-                st.subheader(f"${monto_resultado:,.2f}")
-            else:
-                st.write("Selecciona años diferentes.")
+            st.write(f"Resultado para {a_dest}:")
+            st.subheader(f"${res:,.2f}")
 
     with col_r2_right:
-        # Espacio reservado para el próximo botón
         st.empty()
 
+# --- EL RESTO DEL DASHBOARD SIGUE IGUAL (Lógica Principal) ---
 st.title("Dashboard: Libertad Financiera")
 
 MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
@@ -94,7 +87,6 @@ MESES_NOMBRES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
 if 'año_meta_cache' not in st.session_state:
     st.session_state.año_meta_cache = YEAR_ACTUAL + 5
 
-# 2. Sidebar - Variables principales
 with st.sidebar:
     st.header("👤 Perfil")
     edad_actual = st.number_input("Tu edad actual", value=42, step=1, min_value=1, max_value=100)
@@ -129,7 +121,7 @@ with st.sidebar:
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
     inversion_extra_mensual = st.number_input("Inversion extra post-compra ($)", value=500, step=100, min_value=0)
 
-# 3. Motor de Cálculo
+# Motor de Cálculo
 meses = años_proyeccion * 12
 datos = []
 capital_actual = float(cap_inicial)
@@ -219,7 +211,6 @@ if años_extra_trabajo == 0:
 
 df = pd.DataFrame(datos)
 
-# 4. Layout
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"🧬 Proyección a {años_proyeccion} Años")
@@ -247,7 +238,6 @@ with col_chart:
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
-# 5. KPIs y Banners
 st.markdown("---")
 año_libertad = (año_meta if año_meta else YEAR_ACTUAL) + años_extra_trabajo
 edad_compra = edad_actual + (año_meta - YEAR_ACTUAL) if año_meta else 0
@@ -263,29 +253,18 @@ with k3:
 if meta_lograda:
     if año_agotamiento:
         años_duracion = año_agotamiento - año_libertad
-        msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra a los **{edad_compra} años** ({mes_nombre_meta} {año_meta}), " + \
-                (f"seguidos de {años_extra_trabajo} años de inversión extra. " if inversion_extra_mensual > 0 else f"posponiendo el retiro {años_extra_trabajo} año(s). " if años_extra_trabajo > 0 else "") + \
-                f"El capital dura **{años_duracion} años** y se agota en **{año_agotamiento}** (Edad: {edad_actual + (año_agotamiento - YEAR_ACTUAL)}), ajusta el plan de contingencia."
+        msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra a los **{edad_compra} años**, el capital dura **{años_duracion} años** y se agota en **{año_agotamiento}**."
         st.warning(msg_w)
     else:
-        if años_extra_trabajo > 0:
-            if inversion_extra_mensual > 0:
-                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado a los **{edad_compra} años** ({mes_nombre_meta} de {año_meta}). Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro a los **{edad_retiro} años** ({mes_nombre_meta} de {año_libertad}). Sostenible hasta el año **{año_final_proy}**."
-            else:
-                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado a los **{edad_compra} años** ({mes_nombre_meta} de {año_meta}). Se **pospone el retiro del buffer por {años_extra_trabajo} año(s)** para permitir crecimiento compuesto, iniciando el retiro a los **{edad_retiro} años** ({mes_nombre_meta} de {año_libertad}). Sostenible hasta el año **{año_final_proy}**."
-        else:
-            msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado a los **{edad_compra} años** ({mes_nombre_meta} de {año_meta}). Iniciando el retiro en **{mes_nombre_meta} de {año_meta}**. Sostenible hasta el año **{año_final_proy}**."
-        st.info(msg_i)
+        st.info(f"🚀 **Libertad Financiera Lograda:** Apartamento comprado a los **{edad_compra} años**.")
 
 st.markdown("---")
 m1, m2, m3 = st.columns(3)
-m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
-m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
-m3.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏁 Capital Post-Laboral ({año_libertad})</p><p style='font-size:24px; color:#1E90FF; font-weight:bold; margin-top:0px;'>${capital_post_laboral:,.0f}</p>", unsafe_allow_html=True)
+m1.markdown(f"🏠 Costo Final: **${costo_final_aparta:,.0f}**")
+m2.markdown(f"💰 Capital Post-Compra: **${capital_post_meta:,.0f}**")
+m3.markdown(f"🏁 Capital Post-Laboral ({año_libertad}): **${capital_post_laboral:,.0f}**")
 
-# 6. Auditoría
-st.markdown("---")
-st.markdown("### 📊 Rendimiento del Plan de Inversión")
+st.markdown("### 📊 Rendimiento")
 c1, c2, c3 = st.columns(3)
 c1.metric("Total Inyectado", f"${round(total_ahorro_propio):,}")
 c2.metric("Intereses Acumulados", f"${round(total_intereses_generados):,}")
