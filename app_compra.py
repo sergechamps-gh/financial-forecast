@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.9.5", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.9.6", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS, INTERÉS & INFLACIÓN) ---
 with st.sidebar:
@@ -37,17 +37,13 @@ with st.sidebar:
             
             st.divider()
             if moneda_calc == "CRC":
-                st.metric("Mensual", f"₡{total_m:,.0f}")
-                st.metric("Anual", f"₡{total_a:,.0f}")
-                # Conversión cruzada en el pie
+                st.metric("Total Mensual", f"₡{total_m:,.0f}")
                 anual_usd = total_a / tasa_cambio if tasa_cambio > 0 else 0
-                st.caption(f"Equivalente Anual: ${anual_usd:,.2f} USD | ₡{total_a:,.0f} CRC")
+                st.caption(f"Total Anual: ₡{total_a:,.0f} | ${anual_usd:,.2f} USD")
             else:
-                st.metric("Mensual", f"${total_m:,.2f}")
-                st.metric("Anual", f"${total_a:,.2f}")
-                # Conversión cruzada en el pie
+                st.metric("Total Mensual", f"${total_m:,.2f}")
                 anual_crc = total_a * tasa_cambio
-                st.caption(f"Equivalente Anual: ₡{anual_crc:,.0f} CRC | ${total_a:,.2f} USD")
+                st.caption(f"Total Anual: ${total_a:,.2f} USD | ₡{anual_crc:,.0f} CRC")
 
     with col_r1_right:
         with st.popover("📈 Interés", use_container_width=True):
@@ -125,7 +121,7 @@ with st.sidebar:
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
     inversion_extra_mensual = st.number_input("Inversion extra post-compra ($)", value=500, step=100, min_value=0)
 
-# Motor de Cálculo (Manteniendo lógica de v4.9.4)
+# Motor de Cálculo
 meses = años_proyeccion * 12
 datos = []
 capital_actual = float(cap_inicial)
