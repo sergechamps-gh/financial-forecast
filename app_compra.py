@@ -7,15 +7,19 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.9.2", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.9.3", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS, INTERÉS & INFLACIÓN) ---
 with st.sidebar:
     st.title("🧮 Calculadoras")
-    col_calcs_1, col_calcs_2 = st.columns(2)
     
-    with col_calcs_1:
-        with st.popover("💰 Gastos"):
+    # Fila 1
+    col_r1_left, col_r1_right = st.columns(2)
+    # Fila 2 (Para Inflación y el espacio futuro)
+    col_r2_left, col_r2_right = st.columns(2)
+    
+    with col_r1_left:
+        with st.popover("💰 Gastos", use_container_width=True):
             tasa_cambio = st.number_input("Tipo de cambio (CRC por USD)", value=460.0, step=1.0, min_value=0.0)
             moneda_calc = st.radio("Moneda base:", ["USD", "CRC"], horizontal=True)
             step_val = 10.0 if moneda_calc == "USD" else 5000.0
@@ -42,8 +46,8 @@ with st.sidebar:
                 st.metric("Total Mensual", f"${total_m:,.2f}")
                 st.caption(f"Equivale a: ₡{m_crc:,.0f} CRC")
 
-    with col_calcs_2:
-        with st.popover("📈 Interés"):
+    with col_r1_right:
+        with st.popover("📈 Interés", use_container_width=True):
             st.write("📊 **Calculadora Compuesta**")
             c_ini_c = st.number_input("Capital Inicial ($)", value=1000, step=1000, min_value=0)
             a_men_c = st.number_input("Aporte Mensual ($)", value=500, step=100, min_value=0)
@@ -56,29 +60,31 @@ with st.sidebar:
                 c_temp += c_temp * (tasa_int_c / 12)
             st.metric("Monto Final", f"${c_temp:,.0f}")
 
-    # --- CALCULADORA: INFLACIÓN (UPDATE STEPS) ---
-    with st.popover("🎈 Inflación", use_container_width=True):
-        st.write("📊 **Comparador de Años**")
-        monto_infla = st.number_input("Monto a comparar ($)", value=200000.0, step=5000.0, min_value=0.0)
-        tasa_infla = st.number_input("Inflación anual (%)", value=3.0, step=0.25, min_value=0.0) / 100
-        
-        año_origen = st.number_input("Del año:", value=YEAR_ACTUAL, step=1)
-        año_destino = st.number_input("Al año:", value=YEAR_ACTUAL + 10, step=1)
-        
-        diff_years = año_destino - año_origen
-        monto_resultado = monto_infla * ((1 + tasa_infla) ** diff_years)
-        
-        st.divider()
-        if diff_years > 0:
-            st.write(f"En **{año_destino}**, necesitarás:")
-            st.subheader(f"${monto_resultado:,.2f}")
-            st.caption(f"Para mantener el poder de ${monto_infla:,.2f} del {año_origen}")
-        elif diff_years < 0:
-            st.write(f"En **{año_destino}**, ese monto equivalía a:")
-            st.subheader(f"${monto_resultado:,.2f}")
-            st.caption(f"El valor de ${monto_infla:,.2f} hoy se sentía como esa cifra en {año_destino}")
-        else:
-            st.write("Selecciona años diferentes para comparar.")
+    with col_r2_left:
+        with st.popover("🎈 Inflación", use_container_width=True):
+            st.write("📊 **Comparador de Años**")
+            monto_infla = st.number_input("Monto a comparar ($)", value=200000.0, step=5000.0, min_value=0.0)
+            tasa_infla = st.number_input("Inflación anual (%)", value=3.0, step=0.25, min_value=0.0) / 100
+            
+            año_origen = st.number_input("Del año:", value=YEAR_ACTUAL, step=1)
+            año_destino = st.number_input("Al año:", value=YEAR_ACTUAL + 10, step=1)
+            
+            diff_years = año_destino - año_origen
+            monto_resultado = monto_infla * ((1 + tasa_infla) ** diff_years)
+            
+            st.divider()
+            if diff_years > 0:
+                st.write(f"En **{año_destino}**, necesitarás:")
+                st.subheader(f"${monto_resultado:,.2f}")
+            elif diff_years < 0:
+                st.write(f"En **{año_destino}**, equivalía a:")
+                st.subheader(f"${monto_resultado:,.2f}")
+            else:
+                st.write("Selecciona años diferentes.")
+
+    with col_r2_right:
+        # Espacio reservado para el próximo botón
+        st.empty()
 
 st.title("Dashboard: Libertad Financiera")
 
