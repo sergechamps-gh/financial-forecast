@@ -7,9 +7,9 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.8.1", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.9.0", layout="wide")
 
-# --- SECCIÓN: HERRAMIENTAS (GASTOS & INTERÉS COMPUESTO) ---
+# --- SECCIÓN: HERRAMIENTAS (GASTOS, INTERÉS & INFLACIÓN) ---
 with st.sidebar:
     st.title("🧮 Calculadoras")
     col_calcs_1, col_calcs_2 = st.columns(2)
@@ -40,13 +40,10 @@ with st.sidebar:
                 a_usd = total_a / tasa_cambio if tasa_cambio > 0 else 0
                 st.metric("Total Mensual", f"₡{total_m:,.0f}")
                 st.caption(f"Equivale a: ${m_usd:,.2f} USD")
-                st.caption(f"Total Anual: ₡{total_a:,.0f} / ${a_usd:,.2f} USD")
             else:
                 m_crc = total_m * tasa_cambio
-                a_crc = total_a * tasa_cambio
                 st.metric("Total Mensual", f"${total_m:,.2f}")
                 st.caption(f"Equivale a: ₡{m_crc:,.0f} CRC")
-                st.caption(f"Total Anual: ${total_a:,.2f} / ₡{a_crc:,.0f} CRC")
 
     with col_calcs_2:
         with st.popover("📈 Interés"):
@@ -56,16 +53,33 @@ with st.sidebar:
             tasa_int_c = st.number_input("Rendimiento Anual (%)", value=10.0, step=0.5, min_value=0.0) / 100
             t_años_c = st.number_input("Años", value=10, step=1, min_value=1)
             
-            datos_int = []
             c_temp = c_ini_c
-            for i in range(1, t_años_c + 1):
-                for _ in range(12):
-                    c_temp += a_men_c
-                    c_temp += c_temp * (tasa_int_c / 12)
-                datos_int.append({"Año": i, "Total": round(c_temp)})
-            
-            st.dataframe(pd.DataFrame(datos_int), hide_index=True, use_container_width=True)
-            st.metric("Final", f"${c_temp:,.0f}")
+            for _ in range(t_años_c * 12):
+                c_temp += a_men_c
+                c_temp += c_temp * (tasa_int_c / 12)
+            st.metric("Monto Final", f"${c_temp:,.0f}")
+
+    # --- NUEVA CALCULADORA: INFLACIÓN ---
+    with st.popover("🎈 Inflación", use_container_width=True):
+        st.write("📊 **Poder Adquisitivo**")
+        monto_base = st.number_input("Monto ($)", value=1000.0, step=100.0, min_value=0.0)
+        tasa_inf_calc = st.number_input("Tasa Inflación Anual (%)", value=3.0, step=0.5, min_value=0.0) / 100
+        
+        tab_fut, tab_pas = st.tabs(["🚀 Futuro", "⏪ Pasado"])
+        
+        with tab_fut:
+            años_fut = st.slider("Años al futuro", 1, 40, 10)
+            monto_futuro = monto_base * ((1 + tasa_inf_calc) ** años_fut)
+            st.write(f"En **{YEAR_ACTUAL + años_fut}**, necesitarás:")
+            st.subheader(f"${monto_futuro:,.2f}")
+            st.caption(f"Para comprar lo que hoy compras con ${monto_base:,.2f}")
+
+        with tab_pas:
+            años_pas = st.slider("Años al pasado", 1, 40, 10)
+            monto_pasado = monto_base / ((1 + tasa_inf_calc) ** años_pas)
+            st.write(f"En **{YEAR_ACTUAL - años_pas}**, ese monto equivalía a:")
+            st.subheader(f"${monto_pasado:,.2f}")
+            st.caption(f"A valores de hoy, ${monto_base:,.2f} se sentían como ${monto_pasado:,.2f} en el pasado.")
 
 st.title("Dashboard: Libertad Financiera")
 
@@ -110,7 +124,7 @@ with st.sidebar:
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
     inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=500, step=100, min_value=0)
 
-# 3. Motor de Cálculo
+# 3. Motor de Cálculo (Manteniendo lógica HOA de v4.8.1)
 meses = años_proyeccion * 12
 datos = []
 capital_actual = float(cap_inicial)
@@ -243,7 +257,6 @@ with k3:
 
 if meta_lograda:
     if año_agotamiento:
-        # Lógica para calcular cuánto duró el capital después de dejar de trabajar
         años_duracion = año_agotamiento - año_libertad
         msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra a los **{edad_compra} años** ({mes_nombre_meta} {año_meta}), " + \
                 (f"seguidos de {años_extra_trabajo} años de inversión extra. " if inversion_extra_mensual > 0 else f"posponiendo el retiro {años_extra_trabajo} año(s). " if años_extra_trabajo > 0 else "") + \
