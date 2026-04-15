@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.7.7", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.7.9", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS & INTERÉS COMPUESTO) ---
 with st.sidebar:
@@ -155,17 +155,22 @@ for mes in range(0, meses):
         inyectado_anual += ahorro_mensual
         total_ahorro_propio += ahorro_mensual
     else:
-        capital_actual -= cuota_condo_ajustada
-        condo_anual_acumulado += cuota_condo_ajustada
         meses_desde_compra = mes - mes_de_la_compra
         es_periodo_extra = meses_desde_compra <= (años_extra_trabajo * 12)
+        
         if es_periodo_extra:
+            # LÓGICA CORREGIDA: Mientras trabajas, el ingreso paga el HOA, no el capital.
             capital_actual += inversion_extra_mensual
             inyectado_anual += inversion_extra_mensual
             total_ahorro_propio += inversion_extra_mensual
+            # No restamos condo_anual_acumulado del capital aquí porque se paga con salario
             if meses_desde_compra == (años_extra_trabajo * 12):
                 capital_post_laboral = capital_actual
         else:
+            # Solo restamos HOA del capital cuando ya estás retirado
+            capital_actual -= cuota_condo_ajustada
+            condo_anual_acumulado += cuota_condo_ajustada
+            
             meses_post_trabajo = meses_desde_compra - (años_extra_trabajo * 12)
             if meses_post_trabajo == 1 or (meses_post_trabajo > 1 and meses_post_trabajo % 24 == 0):
                 capital_actual -= gasto_buffer_ajustado
