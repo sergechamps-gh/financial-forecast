@@ -89,7 +89,7 @@ if 'año_meta_cache' not in st.session_state:
 
 with st.sidebar:
     st.header("👤 Perfil")
-    edad_actual = st.number_input("Tu edad actual (0 para omitir)", value=42, step=1, min_value=0, max_value=100)
+    edad_actual = st.number_input("Tu edad actual (0 para omitir)", value=0, step=1, min_value=0, max_value=100)
 
     st.header("⚙️ Variables de Inversión")
     cap_inicial = st.number_input("Capital Inicial Principal ($)", value=0, step=5000, min_value=0)
