@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.9.6", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.9.7", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS, INTERÉS & INFLACIÓN) ---
 with st.sidebar:
@@ -121,7 +121,7 @@ with st.sidebar:
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
     inversion_extra_mensual = st.number_input("Inversion extra post-compra ($)", value=500, step=100, min_value=0)
 
-# Motor de Cálculo
+# 3. Motor de Cálculo
 meses = años_proyeccion * 12
 datos = []
 capital_actual = float(cap_inicial)
@@ -211,6 +211,7 @@ if años_extra_trabajo == 0:
 
 df = pd.DataFrame(datos)
 
+# 4. Layout Tablas y Gráficos
 col_table, col_chart = st.columns([1.2, 0.8])
 with col_table:
     st.subheader(f"🧬 Proyección a {años_proyeccion} Años")
@@ -238,6 +239,7 @@ with col_chart:
     fig.update_layout(height=400, margin=dict(l=0, r=0, t=20, b=0), template="plotly_dark", legend=dict(orientation="h", y=1.1))
     st.plotly_chart(fig, use_container_width=True)
 
+# 5. KPIs y BANNERS DESCRIPTIVOS (RESTAURADOS)
 st.markdown("---")
 año_libertad = (año_meta if año_meta else YEAR_ACTUAL) + años_extra_trabajo
 edad_compra = edad_actual + (año_meta - YEAR_ACTUAL) if año_meta else 0
@@ -253,18 +255,28 @@ with k3:
 if meta_lograda:
     if año_agotamiento:
         años_duracion = año_agotamiento - año_libertad
-        msg_w = f"⚠️ **Alerta:** Después de comprar a los **{edad_compra} años**, el capital dura **{años_duracion} años**."
+        msg_w = f"⚠️ **Alerta de Sistema:** Después de la compra a los **{edad_compra} años** ({mes_nombre_meta} {año_meta}), " + \
+                (f"seguidos de {años_extra_trabajo} años de inversión extra. " if inversion_extra_mensual > 0 else f"posponiendo el retiro {años_extra_trabajo} año(s). " if años_extra_trabajo > 0 else "") + \
+                f"El capital dura **{años_duracion} años** y se agota en **{año_agotamiento}** (Edad: {edad_actual + (año_agotamiento - YEAR_ACTUAL)}), ajusta el plan de contingencia."
         st.warning(msg_w)
     else:
-        st.info(f"🚀 **Libertad Financiera Lograda:** Apartamento comprado a los **{edad_compra} años**.")
+        if años_extra_trabajo > 0:
+            if inversion_extra_mensual > 0:
+                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado a los **{edad_compra} años** ({mes_nombre_meta} de {año_meta}). Se trabajan **{años_extra_trabajo} años adicionales** invirtiendo **${inversion_extra_mensual:,}/mes**, iniciando el retiro a los **{edad_retiro} años** ({mes_nombre_meta} de {año_libertad}). Sostenible hasta el año **{año_final_proy}**."
+            else:
+                msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado a los **{edad_compra} años** ({mes_nombre_meta} de {año_meta}). Se **pospone el retiro del buffer por {años_extra_trabajo} año(s)** para permitir crecimiento compuesto, iniciando el retiro a los **{edad_retiro} años** ({mes_nombre_meta} de {año_libertad}). Sostenible hasta el año **{año_final_proy}**."
+        else:
+            msg_i = f"🚀 **Libertad Financiera Lograda:** Apartamento comprado a los **{edad_compra} años** ({mes_nombre_meta} de {año_meta}). Iniciando el retiro en **{mes_nombre_meta} de {año_meta}**. Sostenible hasta el año **{año_final_proy}**."
+        st.info(msg_i)
 
 st.markdown("---")
 m1, m2, m3 = st.columns(3)
-m1.markdown(f"🏠 Costo Final: **${costo_final_aparta:,.0f}**")
-m2.markdown(f"💰 Capital Post-Compra: **${capital_post_meta:,.0f}**")
-m3.markdown(f"🏁 Capital Post-Laboral ({año_libertad}): **${capital_post_laboral:,.0f}**")
+m1.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏠 Costo Final Apartamento</p><p style='font-size:24px; color:#ff4b4b; font-weight:bold; margin-top:0px;'>${costo_final_aparta:,.0f}</p>", unsafe_allow_html=True)
+m2.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>💰 Capital Post-Compra</p><p style='font-size:24px; color:#28a745; font-weight:bold; margin-top:0px;'>${capital_post_meta:,.0f}</p>", unsafe_allow_html=True)
+m3.markdown(f"<p style='font-size:16px; margin-bottom:0px;'>🏁 Capital Post-Laboral ({año_libertad})</p><p style='font-size:24px; color:#1E90FF; font-weight:bold; margin-top:0px;'>${capital_post_laboral:,.0f}</p>", unsafe_allow_html=True)
 
-st.markdown("### 📊 Rendimiento")
+# 6. Auditoría
+st.markdown("### 📊 Rendimiento del Plan de Inversión")
 c1, c2, c3 = st.columns(3)
 c1.metric("Total Inyectado", f"${round(total_ahorro_propio):,}")
 c2.metric("Intereses Acumulados", f"${round(total_intereses_generados):,}")
