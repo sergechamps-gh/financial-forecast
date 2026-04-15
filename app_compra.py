@@ -7,7 +7,7 @@ from datetime import datetime
 # 1. Configuración de tiempo
 YEAR_ACTUAL = 2026 
 
-st.set_page_config(page_title=f"Serge Financial Strategy v4.9.0", layout="wide")
+st.set_page_config(page_title=f"Serge Financial Strategy v4.9.1", layout="wide")
 
 # --- SECCIÓN: HERRAMIENTAS (GASTOS, INTERÉS & INFLACIÓN) ---
 with st.sidebar:
@@ -33,11 +33,8 @@ with st.sidebar:
             g_diversion = st.number_input(f"Diversión ({simbolo})", value=0.0, step=step_val, min_value=0.0)
             
             total_m = g_diario + g_luz + g_agua + g_internet + g_cel + g_hoa + g_diversion
-            total_a = total_m * 12
-            
             if moneda_calc == "CRC":
                 m_usd = total_m / tasa_cambio if tasa_cambio > 0 else 0
-                a_usd = total_a / tasa_cambio if tasa_cambio > 0 else 0
                 st.metric("Total Mensual", f"₡{total_m:,.0f}")
                 st.caption(f"Equivale a: ${m_usd:,.2f} USD")
             else:
@@ -59,27 +56,29 @@ with st.sidebar:
                 c_temp += c_temp * (tasa_int_c / 12)
             st.metric("Monto Final", f"${c_temp:,.0f}")
 
-    # --- NUEVA CALCULADORA: INFLACIÓN ---
+    # --- CALCULADORA: INFLACIÓN POR AÑO SELECCIONADO ---
     with st.popover("🎈 Inflación", use_container_width=True):
-        st.write("📊 **Poder Adquisitivo**")
-        monto_base = st.number_input("Monto ($)", value=1000.0, step=100.0, min_value=0.0)
-        tasa_inf_calc = st.number_input("Tasa Inflación Anual (%)", value=3.0, step=0.5, min_value=0.0) / 100
+        st.write("📊 **Comparador de Años**")
+        monto_infla = st.number_input("Monto a comparar ($)", value=1000.0, step=100.0, min_value=0.0)
+        tasa_infla = st.number_input("Inflación anual (%)", value=3.0, step=0.1, min_value=0.0) / 100
         
-        tab_fut, tab_pas = st.tabs(["🚀 Futuro", "⏪ Pasado"])
+        año_origen = st.number_input("Del año:", value=YEAR_ACTUAL, step=1)
+        año_destino = st.number_input("Al año:", value=YEAR_ACTUAL + 10, step=1)
         
-        with tab_fut:
-            años_fut = st.slider("Años al futuro", 1, 40, 10)
-            monto_futuro = monto_base * ((1 + tasa_inf_calc) ** años_fut)
-            st.write(f"En **{YEAR_ACTUAL + años_fut}**, necesitarás:")
-            st.subheader(f"${monto_futuro:,.2f}")
-            st.caption(f"Para comprar lo que hoy compras con ${monto_base:,.2f}")
-
-        with tab_pas:
-            años_pas = st.slider("Años al pasado", 1, 40, 10)
-            monto_pasado = monto_base / ((1 + tasa_inf_calc) ** años_pas)
-            st.write(f"En **{YEAR_ACTUAL - años_pas}**, ese monto equivalía a:")
-            st.subheader(f"${monto_pasado:,.2f}")
-            st.caption(f"A valores de hoy, ${monto_base:,.2f} se sentían como ${monto_pasado:,.2f} en el pasado.")
+        diff_years = año_destino - año_origen
+        monto_resultado = monto_infla * ((1 + tasa_infla) ** diff_years)
+        
+        st.divider()
+        if diff_years > 0:
+            st.write(f"En **{año_destino}**, necesitarás:")
+            st.subheader(f"${monto_resultado:,.2f}")
+            st.caption(f"Para mantener el poder de ${monto_infla:,.2f} del {año_origen}")
+        elif diff_years < 0:
+            st.write(f"En **{año_destino}**, ese monto equivalía a:")
+            st.subheader(f"${monto_resultado:,.2f}")
+            st.caption(f"El valor de ${monto_infla:,.2f} hoy se sentía como esa cifra en {año_destino}")
+        else:
+            st.write("Selecciona años diferentes para comparar.")
 
 st.title("Dashboard: Libertad Financiera")
 
@@ -122,9 +121,9 @@ with st.sidebar:
     año_base = st.session_state.año_meta_cache
     años_extra_trabajo = st.slider(f"Años extra de trabajo post-compra", 0, 20, 1)
     st.caption(f"Fecha estimada de retiro: {año_base + años_extra_trabajo}")
-    inversion_extra_mensual = st.number_input("Inversión mensual extra post-compra ($)", value=500, step=100, min_value=0)
+    inversion_extra_mensual = st.number_input("Inversion extra post-compra ($)", value=500, step=100, min_value=0)
 
-# 3. Motor de Cálculo (Manteniendo lógica HOA de v4.8.1)
+# 3. Motor de Cálculo (Lógica de v4.8.1)
 meses = años_proyeccion * 12
 datos = []
 capital_actual = float(cap_inicial)
